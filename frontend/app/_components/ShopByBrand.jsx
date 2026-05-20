@@ -1,5 +1,6 @@
 import Link from "next/link";
 import SectionHeading from "./SectionHeading";
+import BrandLogo from "./BrandLogo";
 import { getBrandsByNames } from "@/lib/brands";
 import { getCategoryBrandNames, getCategoryLabel } from "@/lib/category-content";
 import { getSlug } from "@/lib/slug";
@@ -20,7 +21,7 @@ export default function ShopByBrand({ slug }) {
               href={`/category/${slug}/brand/${getSlug(brand.name)}`}
               className="flex h-24 items-center justify-center border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28"
             >
-              {brand.render()}
+              <BrandLogo brand={brand} size="lg" />
             </Link>
           ))}
         </div>

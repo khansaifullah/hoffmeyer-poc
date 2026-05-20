@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "./BrandLogo";
 import { getCategoryName } from "@/lib/categories";
 
 export default function BrandHero({ brand, categorySlug }) {
@@ -9,7 +10,7 @@ export default function BrandHero({ brand, categorySlug }) {
       <div className="mx-auto flex max-w-7xl flex-col md:flex-row">
         <div className="flex w-full flex-col justify-center bg-white p-8 text-[#111] md:w-[340px] md:shrink-0">
           <div className="mb-6 flex min-h-[80px] items-center justify-center border border-gray-100 bg-[#fafafa] p-4">
-            <div className="scale-110">{brand.render()}</div>
+            <BrandLogo brand={brand} size="lg" className="max-h-16" />
           </div>
           <label className="relative block">
             <span className="sr-only">Search {brand.name}</span>

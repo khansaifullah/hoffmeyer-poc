@@ -67,7 +67,13 @@ const Header = () => {
                 <a href="#" className="hover:text-[#004b87] transition-colors">Locations</a>
                 <a href="#" className="hover:text-[#004b87] transition-colors">Resources</a>
                 <a href="#" className="hover:text-[#004b87] transition-colors">About Us</a>
-                <a href="#" className="hover:text-[#004b87] transition-colors">Sign In | Register</a>
+                <span className="flex items-center gap-2">
+                  <Link href="/login" className="hover:text-[#004b87] transition-colors">
+                    Login
+                  </Link>
+                  <span className="text-gray-400">|</span>
+                  <a href="#" className="hover:text-[#004b87] transition-colors">Register</a>
+                </span>
               </nav>
               <div className="text-[28px] font-extrabold text-[#16568D] tracking-tight whitespace-nowrap">
                 (800) 350-2358
@@ -180,15 +186,26 @@ const Header = () => {
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Locations</a>
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Resources</a>
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">About Us</a>
+            <Link
+              href="/login"
+              className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Login
+            </Link>
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Quick Order</a>
           </nav>
         </div>
 
         <div className="mt-auto p-6 bg-[#f8f8f8] border-t border-gray-200">
           <div className="flex flex-col gap-3">
-            <button className="w-full bg-white border-2 border-[#16568D] text-[#16568D] font-bold py-3 rounded-lg hover:bg-gray-50 transition-colors">
-              Sign In
-            </button>
+            <Link
+              href="/login"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full bg-white border-2 border-[#16568D] text-[#16568D] font-bold py-3 rounded-lg hover:bg-gray-50 transition-colors text-center"
+            >
+              Login
+            </Link>
             <button className="w-full bg-[#16568D] text-white font-bold py-3 rounded-lg hover:bg-[#124570] transition-colors">
               Register
             </button>

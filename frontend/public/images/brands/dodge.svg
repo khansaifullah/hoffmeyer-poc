@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 70" role="img" aria-label="DODGE">
+  <g fill="#1C3D43">
+    <path d="M110 8 L132 24 L110 40 L88 24 Z" fill="#5A949E"/>
+    <path d="M110 14 L124 24 L110 34 L96 24 Z" fill="#1C3D43"/>
+  </g>
+  <text x="110" y="60" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" font-weight="900" fill="#1C3D43" letter-spacing="0.18em">DODGE</text>
+</svg>

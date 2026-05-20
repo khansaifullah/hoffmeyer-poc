@@ -1,4 +1,5 @@
 import { defaultBrandNames, getBrandsByNames } from "@/lib/brands";
+import BrandLogo from "./BrandLogo";
 
 export default function FeaturedBrands({ title = "Shop by Brand" }) {
   const featuredBrands = getBrandsByNames(defaultBrandNames);
@@ -16,7 +17,7 @@ export default function FeaturedBrands({ title = "Shop by Brand" }) {
               key={brand.name}
               className="flex h-16 cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-105"
             >
-              {brand.render()}
+              <BrandLogo brand={brand} size="default" className="max-h-10" />
             </div>
           ))}
         </div>
