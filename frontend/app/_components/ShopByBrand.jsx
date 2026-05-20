@@ -1,0 +1,39 @@
+import Link from "next/link";
+import SectionHeading from "./SectionHeading";
+import { getBrandsByNames } from "@/lib/brands";
+import { getCategoryBrandNames, getCategoryLabel } from "@/lib/category-content";
+import { getSlug } from "@/lib/slug";
+
+export default function ShopByBrand({ slug }) {
+  const label = getCategoryLabel(slug);
+  const brands = getBrandsByNames(getCategoryBrandNames(slug));
+
+  return (
+    <section className="bg-[#f2f2f2] px-4 py-10 md:px-8 md:py-14">
+      <div className="mx-auto max-w-7xl">
+        <SectionHeading accent="Shop" rest={`${label} by Brand`} />
+
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+          {brands.map((brand) => (
+            <Link
+              key={brand.name}
+              href={`/category/${slug}/brand/${getSlug(brand.name)}`}
+              className="flex h-24 items-center justify-center border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28"
+            >
+              {brand.render()}
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-8 flex justify-center">
+          <Link
+            href={`/category/${slug}`}
+            className="border border-[#16568D] bg-white px-8 py-2.5 text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white"
+          >
+            View All Brands
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
