@@ -1,12 +1,13 @@
 import Link from "next/link";
+import { getSlug } from "@/lib/slug";
 
 const defaultProducts = [
-  { name: "Heavy-Duty Belt", image: "/images/products/heavy-duty-belt.png", category: "conveyor-belts" },
-  { name: "Dodge® Pillow Block Bearings", image: "/images/products/bearing.png", category: "bearings" },
-  { name: "WD40® Silicone Lubricant", image: "/images/products/wd40.png", category: "adhesives-and-lubricants" },
-  { name: "Huskey™ Lube-O-Seal", image: "/images/products/huskey.png", category: "adhesives-and-lubricants" },
-  { name: "Oil Seals", image: "/images/products/oil-seal.png", category: "rubber-and-gaskets" },
-  { name: "Fuel Transfer Hose", image: "/images/products/fuel-hose.png", category: "industrial-hose" },
+  { name: "Heavy-Duty Rubber Conveyor Belt", image: "/images/products/conveyor-belt.png", category: "conveyor-belts" },
+  { name: "Dodge® Pillow Block Bearing", image: "/images/products/bearing.png", category: "bearings" },
+  { name: "WD40® Specialist Silicone Lubricant", image: "/images/products/wd40.png", category: "adhesives-and-lubricants" },
+  { name: "Huskey™ Lube-O-Seal PTFE Grease", image: "/images/products/huskey.png", category: "adhesives-and-lubricants" },
+  { name: "Neoprene Sheet Rubber Gasket", image: "/images/products/oil-seal.png", category: "rubber-and-gaskets" },
+  { name: "Fuel & Oil Suction Hose", image: "/images/products/fuel-hose.png", category: "industrial-hose" },
 ];
 
 export default function FeaturedProducts({
@@ -24,7 +25,7 @@ export default function FeaturedProducts({
         <div className="relative w-full md:px-14">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-6 md:gap-4">
             {products.slice(0, 6).map((product, index) => {
-              const href = linkHref || `/category/${product.category}`;
+              const href = linkHref || `/product/${getSlug(product.name)}`;
 
               return (
                 <Link

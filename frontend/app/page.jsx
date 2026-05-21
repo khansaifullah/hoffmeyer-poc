@@ -11,9 +11,9 @@ export default function Home() {
     <main className="flex min-h-screen flex-col bg-white">
       <Header />
       <Hero />
-      <FeaturedProducts title="Our Top Selling Products" />
-      <FeaturedBrands title="Our Featured Brands" />
       <ShopByCategory />
+      <FeaturedProducts title="Our Top Selling Products" />
+      <FeaturedBrands titleAccent="Our Featured" titleRest="Brands" />
       <InfoSections />
       <Newsletter />
     </main>

@@ -2,9 +2,9 @@ import Header from "../../../_components/Header";
 import Newsletter from "../../../_components/Newsletter";
 import ListingHero from "../../../_components/ListingHero";
 import ProductListingSection from "../../../_components/ProductListingSection";
+import { getProductsForListing } from "@/lib/api-server";
 import { getCategoryName } from "@/lib/categories";
 import { getSubcategoryName } from "@/lib/category-content";
-import { getProductsForCategory } from "@/lib/category-products";
 import { getBrandBySlug } from "@/lib/brands";
 
 export default async function SubcategoryPage({ params, searchParams }) {
@@ -15,9 +15,11 @@ export default async function SubcategoryPage({ params, searchParams }) {
 
   const categoryName = getCategoryName(slug);
   const subcategoryName = getSubcategoryName(slug, subSlug);
-  const products = getProductsForCategory(slug, brand?.name);
 
-  const resultCount = brand ? Math.max(products.length * 791, products.length) : Math.max(products.length * 7921, products.length);
+  const { products, meta } = await getProductsForListing({
+    categorySlug: slug,
+    brandSlug: brandSlug || undefined,
+  });
 
   return (
     <main className="flex min-h-screen flex-col bg-white">
@@ -39,7 +41,7 @@ export default async function SubcategoryPage({ params, searchParams }) {
       <ProductListingSection
         products={products}
         categoryName={subcategoryName}
-        resultCount={resultCount}
+        resultCount={meta?.total ?? products.length}
       />
 
       <Newsletter />

@@ -17,23 +17,23 @@ export default function CategorySubcategories({
       <div className="mx-auto max-w-7xl">
         <SectionHeading accent={accent} rest={titleRest} />
 
-        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 md:gap-4">
+        <div className="mt-8 flex flex-wrap gap-3">
           {subcategories.map((item, index) => (
             <Link
               key={index}
               href={getSubcategoryHref(slug, getSlug(item.name), brandSlug)}
-              className="group flex flex-col border border-gray-200 bg-white transition-colors hover:border-[#16568D]"
+              className="group inline-flex h-14 max-w-full items-center gap-3 rounded-lg border border-gray-200 bg-white pr-4 transition-colors hover:border-[#16568D] md:h-16 md:pr-5"
             >
-              <div className="flex aspect-[4/3] items-center justify-center bg-[#fafafa] p-4">
+              <div className="flex h-full w-14 shrink-0 items-center justify-center rounded-l-[7px] border-r border-gray-100 bg-[#fafafa] p-2 md:w-16">
                 <img
                   src={item.image}
                   alt={item.name}
                   className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
-              <p className="border-t border-gray-100 px-3 py-3 text-center text-[13px] font-semibold leading-snug text-[#333] group-hover:text-[#004b87] md:text-[14px]">
+              <span className="text-[12px] font-semibold leading-snug text-[#333] group-hover:text-[#004b87] md:text-[13px]">
                 {item.name}
-              </p>
+              </span>
             </Link>
           ))}
         </div>

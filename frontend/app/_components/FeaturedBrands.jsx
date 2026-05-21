@@ -1,26 +1,44 @@
-import { defaultBrandNames, getBrandsByNames } from "@/lib/brands";
+import Link from "next/link";
+import SectionHeading from "./SectionHeading";
 import BrandLogo from "./BrandLogo";
+import { defaultBrandNames, getBrandsByNames } from "@/lib/brands";
+import { getSlug } from "@/lib/slug";
 
-export default function FeaturedBrands({ title = "Shop by Brand" }) {
+export default function FeaturedBrands({
+  titleAccent = "Featured",
+  titleRest = "Brands",
+  categorySlug = "bearings",
+  showViewAll = true,
+}) {
   const featuredBrands = getBrandsByNames(defaultBrandNames);
 
   return (
-    <section className="w-full bg-[#f2f2f2] px-4 py-10 md:px-0 md:py-16">
-      <div className="mx-auto w-full max-w-7xl px-4">
-        <h2 className="mb-8 text-center text-[26px] font-bold text-[#004b87] md:mb-12 md:text-[32px]">
-          {title}
-        </h2>
+    <section className="bg-[#f2f2f2] px-4 py-10 md:px-8 md:py-14">
+      <div className="mx-auto max-w-7xl">
+        <SectionHeading accent={titleAccent} rest={titleRest} />
 
-        <div className="grid grid-cols-3 items-center gap-x-6 gap-y-8 md:grid-cols-6 md:gap-x-12 md:gap-y-16">
+        <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           {featuredBrands.map((brand) => (
-            <div
+            <Link
               key={brand.name}
-              className="flex h-16 cursor-pointer items-center justify-center transition-transform duration-300 hover:scale-105"
+              href={`/category/${categorySlug}/brand/${getSlug(brand.name)}`}
+              className="flex h-24 items-center justify-center border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28"
             >
-              <BrandLogo brand={brand} size="default" className="max-h-10" />
-            </div>
+              <BrandLogo brand={brand} size="lg" />
+            </Link>
           ))}
         </div>
+
+        {showViewAll && (
+          <div className="mt-8 flex justify-center">
+            <Link
+              href={`/category/${categorySlug}`}
+              className="border border-[#16568D] bg-white px-8 py-2.5 text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white"
+            >
+              View All Brands
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );

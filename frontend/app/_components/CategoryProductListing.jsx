@@ -1,7 +1,31 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { enrichProduct, formatPrice, parsePrice } from "@/lib/product";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  enrichProduct,
+  formatPrice,
+  MATERIAL_FILTERS,
+  matchesPriceRange,
+  parsePrice,
+  PRICE_RANGE_FILTERS,
+} from "@/lib/product";
+import StockBadge from "./StockBadge";
+
+const SORT_OPTIONS = [
+  { value: "best-match", label: "Sorted by: Best Match" },
+  { value: "price-low", label: "Price: Low to High" },
+  { value: "price-high", label: "Price: High to Low" },
+  { value: "name", label: "Name: A to Z" },
+];
 
 function ProductListRow({ product, quantity, onQuantityChange, compared, onCompareChange }) {
   return (
@@ -9,16 +33,20 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <div className="flex items-start gap-4 p-4 lg:w-[72%] lg:border-r lg:border-gray-200">
           <div className="h-28 w-28 shrink-0 border border-gray-200 bg-white p-2">
-            <img
-              src={product.image}
-              alt={product.name}
-              className="h-full w-full object-contain"
-            />
+            <Link href={`/product/${product.slug}`}>
+              <img
+                src={product.image}
+                alt={product.name}
+                className="h-full w-full object-contain"
+              />
+            </Link>
           </div>
 
           <div className="min-w-0 flex-1">
             <h3 className="text-[18px] font-bold leading-snug text-[#004b87]">
-              {product.name}
+              <Link href={`/product/${product.slug}`} className="hover:underline">
+                {product.name}
+              </Link>
             </h3>
             <p className="mt-1 text-[14px] leading-relaxed text-gray-700">
               {product.description}
@@ -48,14 +76,7 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
               </span>
               <span className="text-[14px] text-gray-500">/each</span>
             </div>
-            {product.inStock && (
-              <p className="mt-2 flex items-center gap-1.5 text-[14px] font-medium text-green-600">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M20 6L9 17l-5-5" />
-                </svg>
-                In stock
-              </p>
-            )}
+            <StockBadge inStock={product.inStock} factoryOrder={product.factoryOrder} />
           </div>
 
           <div className="flex items-center gap-3">
@@ -98,18 +119,20 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
 function ProductGridCard({ product, quantity, onQuantityChange }) {
   return (
     <article className="flex h-full flex-col border border-gray-200 bg-white p-4">
-      <div className="mb-4 flex aspect-square items-center justify-center border border-gray-100 bg-[#fafafa] p-4">
+      <Link href={`/product/${product.slug}`} className="mb-4 flex aspect-square items-center justify-center border border-gray-100 bg-[#fafafa] p-4">
         <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain" />
-      </div>
-      <h3 className="text-[16px] font-bold leading-snug text-[#004b87]">{product.name}</h3>
+      </Link>
+      <h3 className="text-[16px] font-bold leading-snug text-[#004b87]">
+        <Link href={`/product/${product.slug}`} className="hover:underline">
+          {product.name}
+        </Link>
+      </h3>
       <p className="mt-1 line-clamp-2 text-[13px] text-gray-600">{product.description}</p>
       <p className="mt-3 text-[22px] font-bold text-[#111]">
         {formatPrice(product.price)}
         <span className="text-[13px] font-normal text-gray-500"> /each</span>
       </p>
-      {product.inStock && (
-        <p className="mt-1 text-[13px] font-medium text-green-600">In stock</p>
-      )}
+      <StockBadge inStock={product.inStock} factoryOrder={product.factoryOrder} className="mt-1" />
       <div className="mt-auto flex items-center gap-3 pt-4">
         <input
           type="number"
@@ -129,13 +152,82 @@ function ProductGridCard({ product, quantity, onQuantityChange }) {
   );
 }
 
-export default function CategoryProductListing({ products, categoryName = "Industrial" }) {
+function ProductFilters({
+  selectedMaterials,
+  selectedPriceRanges,
+  onMaterialToggle,
+  onPriceRangeToggle,
+  onClearFilters,
+  hasActiveFilters,
+}) {
+  return (
+    <>
+      <div className="mb-4 flex items-center justify-between border-b border-gray-200 pb-2">
+        <h3 className="text-[16px] font-bold text-[#333]">Filter By</h3>
+        {hasActiveFilters && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="text-[12px] font-semibold text-[#16568D] hover:underline"
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      <div className="mb-6">
+        <h4 className="mb-3 text-[12px] font-bold uppercase tracking-wide text-gray-400">
+          Material
+        </h4>
+        <div className="flex flex-col gap-2.5 text-[14px] text-gray-700">
+          {MATERIAL_FILTERS.map((material) => (
+            <label key={material} className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                checked={selectedMaterials.has(material)}
+                onCheckedChange={() => onMaterialToggle(material)}
+                className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
+              />
+              {material}
+            </label>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h4 className="mb-3 text-[12px] font-bold uppercase tracking-wide text-gray-400">
+          Price Range
+        </h4>
+        <div className="flex flex-col gap-2.5 text-[14px] text-gray-700">
+          {PRICE_RANGE_FILTERS.map((range) => (
+            <label key={range.id} className="flex cursor-pointer items-center gap-2.5">
+              <Checkbox
+                checked={selectedPriceRanges.has(range.id)}
+                onCheckedChange={() => onPriceRangeToggle(range.id)}
+                className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
+              />
+              {range.label}
+            </label>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default function CategoryProductListing({
+  products,
+  categoryName = "Industrial",
+  totalResultCount,
+  onFilteredCountChange,
+}) {
   const [view, setView] = useState("list");
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("best-match");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [quantities, setQuantities] = useState({});
   const [compareSet, setCompareSet] = useState(new Set());
+  const [selectedMaterials, setSelectedMaterials] = useState(new Set());
+  const [selectedPriceRanges, setSelectedPriceRanges] = useState(new Set());
 
   const enrichedProducts = useMemo(
     () => products.map((product, index) => enrichProduct(product, index, categoryName)),
@@ -156,6 +248,16 @@ export default function CategoryProductListing({ products, categoryName = "Indus
       );
     }
 
+    if (selectedMaterials.size > 0) {
+      result = result.filter((product) => selectedMaterials.has(product.material));
+    }
+
+    if (selectedPriceRanges.size > 0) {
+      result = result.filter((product) =>
+        [...selectedPriceRanges].some((rangeId) => matchesPriceRange(product.price, rangeId))
+      );
+    }
+
     if (sortBy === "price-low") {
       result = [...result].sort((a, b) => parsePrice(a.price) - parsePrice(b.price));
     } else if (sortBy === "price-high") {
@@ -165,7 +267,48 @@ export default function CategoryProductListing({ products, categoryName = "Indus
     }
 
     return result;
-  }, [enrichedProducts, search, sortBy]);
+  }, [enrichedProducts, search, sortBy, selectedMaterials, selectedPriceRanges]);
+
+  const hasActiveFilters =
+    search.trim().length > 0 || selectedMaterials.size > 0 || selectedPriceRanges.size > 0;
+
+  useEffect(() => {
+    if (!onFilteredCountChange) return;
+
+    onFilteredCountChange(
+      hasActiveFilters ? filteredProducts.length : (totalResultCount ?? enrichedProducts.length)
+    );
+  }, [
+    filteredProducts.length,
+    hasActiveFilters,
+    onFilteredCountChange,
+    totalResultCount,
+    enrichedProducts.length,
+  ]);
+
+  const toggleMaterial = (material) => {
+    setSelectedMaterials((current) => {
+      const next = new Set(current);
+      if (next.has(material)) next.delete(material);
+      else next.add(material);
+      return next;
+    });
+  };
+
+  const togglePriceRange = (rangeId) => {
+    setSelectedPriceRanges((current) => {
+      const next = new Set(current);
+      if (next.has(rangeId)) next.delete(rangeId);
+      else next.add(rangeId);
+      return next;
+    });
+  };
+
+  const clearFilters = () => {
+    setSearch("");
+    setSelectedMaterials(new Set());
+    setSelectedPriceRanges(new Set());
+  };
 
   const setQuantity = (slug, quantity) => {
     setQuantities((current) => ({ ...current, [slug]: quantity }));
@@ -183,43 +326,14 @@ export default function CategoryProductListing({ products, categoryName = "Indus
   return (
     <div className="flex flex-col gap-8 lg:flex-row">
       <aside className="hidden w-56 shrink-0 lg:block">
-        <h3 className="mb-4 border-b border-gray-200 pb-2 text-[16px] font-bold text-[#333]">
-          Filter By
-        </h3>
-
-        <div className="mb-6">
-          <h4 className="mb-3 text-[12px] font-bold uppercase tracking-wide text-gray-400">
-            Material
-          </h4>
-          <div className="flex flex-col gap-2.5 text-[14px] text-gray-700">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Rubber
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> PVC
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Synthetic
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <h4 className="mb-3 text-[12px] font-bold uppercase tracking-wide text-gray-400">
-            Price Range
-          </h4>
-          <div className="flex flex-col gap-2.5 text-[14px] text-gray-700">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Under $100
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> $100 - $200
-            </label>
-            <label className="flex cursor-pointer items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Over $200
-            </label>
-          </div>
-        </div>
+        <ProductFilters
+          selectedMaterials={selectedMaterials}
+          selectedPriceRanges={selectedPriceRanges}
+          onMaterialToggle={toggleMaterial}
+          onPriceRangeToggle={togglePriceRange}
+          onClearFilters={clearFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
       </aside>
 
       <div className="min-w-0 flex-1">
@@ -253,16 +367,25 @@ export default function CategoryProductListing({ products, categoryName = "Indus
               Filters
             </button>
 
-            <select
-              value={sortBy}
-              onChange={(event) => setSortBy(event.target.value)}
-              className="h-10 border border-gray-300 bg-white px-3 text-[14px] text-[#333] outline-none"
-            >
-              <option value="best-match">Sorted by: Best Match</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="price-high">Price: High to Low</option>
-              <option value="name">Name: A to Z</option>
-            </select>
+            <Select value={sortBy} onValueChange={setSortBy} modal={false}>
+              <SelectTrigger className="h-10 min-w-[220px] rounded-none border-gray-300 bg-white px-3 text-[14px] text-[#333] shadow-none focus-visible:border-[#16568D] focus-visible:ring-0">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent
+                alignItemWithTrigger={false}
+                className="rounded-sm border border-gray-200 bg-white shadow-md"
+              >
+                {SORT_OPTIONS.map((option) => (
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    className="cursor-pointer text-[14px] text-[#333] focus:bg-[#16568D]/12 focus:text-[#16568D]"
+                  >
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
             <div className="flex overflow-hidden border border-gray-300">
               <button
@@ -297,44 +420,31 @@ export default function CategoryProductListing({ products, categoryName = "Indus
 
         <div
           className={`mb-6 overflow-hidden transition-all duration-300 lg:hidden ${
-            showMobileFilters ? "max-h-80 rounded border border-gray-200 bg-gray-50 p-4" : "max-h-0"
+            showMobileFilters ? "max-h-[420px] rounded border border-gray-200 bg-gray-50 p-4" : "max-h-0"
           }`}
         >
-          <div className="grid grid-cols-2 gap-4 text-[14px] text-gray-700">
-            <div>
-              <h4 className="mb-2 text-[12px] font-bold uppercase tracking-wide text-gray-400">
-                Material
-              </h4>
-              <label className="mb-2 flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Rubber
-              </label>
-              <label className="mb-2 flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> PVC
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Synthetic
-              </label>
-            </div>
-            <div>
-              <h4 className="mb-2 text-[12px] font-bold uppercase tracking-wide text-gray-400">
-                Price Range
-              </h4>
-              <label className="mb-2 flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Under $100
-              </label>
-              <label className="mb-2 flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> $100 - $200
-              </label>
-              <label className="flex items-center gap-2">
-                <input type="checkbox" className="h-4 w-4 rounded border-gray-300" /> Over $200
-              </label>
-            </div>
-          </div>
+          <ProductFilters
+            selectedMaterials={selectedMaterials}
+            selectedPriceRanges={selectedPriceRanges}
+            onMaterialToggle={toggleMaterial}
+            onPriceRangeToggle={togglePriceRange}
+            onClearFilters={clearFilters}
+            hasActiveFilters={hasActiveFilters}
+          />
         </div>
 
         {filteredProducts.length === 0 ? (
           <div className="border border-gray-200 bg-white px-6 py-16 text-center text-gray-500">
-            No products match your search.
+            No products match your filters.
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-3 block w-full text-[14px] font-semibold text-[#16568D] hover:underline"
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         ) : view === "list" ? (
           <div className="space-y-0 border border-gray-200">

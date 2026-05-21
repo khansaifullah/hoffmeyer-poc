@@ -1,3 +1,7 @@
+import { getSlug } from "./slug";
+import { getCategoryName } from "./categories";
+import { enrichProduct } from "./product";
+
 export const categoryProducts = {
   "conveyor-belts": [
     { name: "Heavy-Duty Rubber Conveyor Belt", price: "$120.00", image: "/images/products/conveyor-belt.png" },
@@ -126,4 +130,32 @@ export function getProductsForCategory(slug, brandName = null) {
   }
 
   return products;
+}
+
+export function getProductBySlug(slug) {
+  for (const [categorySlug, products] of Object.entries(categoryProducts)) {
+    const categoryName = getCategoryName(categorySlug);
+    const index = products.findIndex((product) => getSlug(product.name) === slug);
+
+    if (index !== -1) {
+      return {
+        ...enrichProduct(products[index], index, categoryName),
+        categorySlug,
+        categoryName,
+      };
+    }
+  }
+
+  return null;
+}
+
+export function getRelatedProducts(categorySlug, productSlug, limit = 4) {
+  const products = getProductsForCategory(categorySlug)
+    .map((product, index) => ({
+      ...enrichProduct(product, index, getCategoryName(categorySlug)),
+      categorySlug,
+    }))
+    .filter((product) => product.slug !== productSlug);
+
+  return products.slice(0, limit);
 }

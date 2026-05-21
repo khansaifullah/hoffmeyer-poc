@@ -33,12 +33,187 @@ export async function apiFetch(path, options = {}) {
   return data;
 }
 
-export async function fetchCategories() {
-  const result = await apiFetch("/categories");
+function buildQuery(params = {}) {
+  const search = new URLSearchParams();
+
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== "") {
+      search.set(key, String(value));
+    }
+  });
+
+  const query = search.toString();
+  return query ? `?${query}` : "";
+}
+
+export function mapApiProduct(product) {
+  if (!product) return null;
+
+  return {
+    id: product.id,
+    categoryId: product.category_id,
+    brandId: product.brand_id,
+    name: product.name,
+    slug: product.slug,
+    price: product.price,
+    image: product.image,
+    sku: product.sku,
+    itemNumber: product.item_number,
+    mfrNumber: product.mfr_number,
+    material: product.material,
+    description: product.description,
+    inStock: product.in_stock,
+    availabilityStatus: product.availability_status,
+    factoryOrder: product.availability_status === "factory_order",
+    isFeatured: product.is_featured,
+    sortOrder: product.sort_order,
+    category: product.category ? mapApiCategory(product.category) : null,
+    categorySlug: product.category?.slug,
+    categoryName: product.category?.name,
+    brand: product.brand ? mapApiBrand(product.brand) : null,
+    images: product.images || [],
+    specs: product.specs || [],
+  };
+}
+
+export function mapApiCategory(category) {
+  if (!category) return null;
+
+  return {
+    id: category.id,
+    name: category.name,
+    slug: category.slug,
+    image: category.image,
+    description: category.description,
+    heroDescription: category.hero_description,
+    sortOrder: category.sort_order,
+    isActive: category.is_active,
+    parentId: category.parent_id,
+    productsCount: category.products_count,
+    children: category.children?.map(mapApiCategory) || [],
+    products: category.products?.map(mapApiProduct) || [],
+  };
+}
+
+export function mapApiBrand(brand) {
+  if (!brand) return null;
+
+  return {
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug,
+    logo: brand.logo,
+    description: brand.description,
+    isFeatured: brand.is_featured,
+    isActive: brand.is_active,
+    sortOrder: brand.sort_order,
+    productsCount: brand.products_count,
+    products: brand.products?.map(mapApiProduct) || [],
+  };
+}
+
+export async function fetchCategories(params = {}) {
+  const result = await apiFetch(`/categories${buildQuery(params)}`);
+  return result.data.map(mapApiCategory);
+}
+
+export async function fetchCategory(slug) {
+  const result = await apiFetch(`/categories/${slug}`);
+  return mapApiCategory(result.data);
+}
+
+export async function fetchCategoryTree() {
+  return fetchCategories({ tree: true });
+}
+
+export async function fetchBrands(params = {}) {
+  const result = await apiFetch(`/brands${buildQuery(params)}`);
+  return result.data.map(mapApiBrand);
+}
+
+export async function fetchBrand(slug, params = {}) {
+  const result = await apiFetch(`/brands/${slug}${buildQuery(params)}`);
+  return mapApiBrand(result.data);
+}
+
+export async function fetchProducts(params = {}) {
+  const result = await apiFetch(`/products${buildQuery(params)}`);
+  return {
+    products: result.data.map(mapApiProduct),
+    meta: result.meta || null,
+  };
+}
+
+export async function fetchProduct(slug) {
+  const result = await apiFetch(`/products/${slug}`);
+  return mapApiProduct(result.data);
+}
+
+export async function fetchGlobalSearch(query, limit = 5) {
+  const result = await apiFetch(`/search${buildQuery({ q: query, limit })}`);
   return result.data;
 }
 
-export async function fetchProducts() {
-  const result = await apiFetch("/products");
-  return result.data;
+/** @deprecated Use fetchProducts() which returns paginated results */
+export async function fetchAllProducts() {
+  const { products } = await fetchProducts({ per_page: 100 });
+  return products;
+}
+
+export async function fetchAdminProducts(params = {}) {
+  const result = await apiFetch(`/admin/products${buildQuery(params)}`);
+  return {
+    products: result.data.map(mapApiProduct),
+    meta: result.meta || null,
+  };
+}
+
+export async function fetchAdminProduct(id) {
+  const result = await apiFetch(`/admin/products/${id}`);
+  return mapApiProduct(result.data);
+}
+
+export async function createProduct(payload) {
+  const result = await apiFetch("/admin/products", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return mapApiProduct(result.data);
+}
+
+export async function updateProduct(id, payload) {
+  const result = await apiFetch(`/admin/products/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return mapApiProduct(result.data);
+}
+
+export async function deleteProduct(id) {
+  return apiFetch(`/admin/products/${id}`, { method: "DELETE" });
+}
+
+export function productToPayload(product) {
+  return {
+    category_id: product.category_id,
+    brand_id: product.brand_id || null,
+    name: product.name,
+    slug: product.slug || "",
+    price: Number(product.price),
+    image: product.image || "",
+    sku: product.sku || "",
+    item_number: product.item_number || product.itemNumber || "",
+    mfr_number: product.mfr_number || product.mfrNumber || "",
+    material: product.material || "",
+    description: product.description || "",
+    in_stock: product.in_stock ?? product.inStock ?? true,
+    availability_status: product.availability_status || product.availabilityStatus || "in_stock",
+    is_featured: product.is_featured ?? product.isFeatured ?? false,
+    sort_order: product.sort_order ?? product.sortOrder ?? 0,
+    images: (product.images || []).map((image) => (typeof image === "string" ? image : image.url)).filter(Boolean),
+    specs: (product.specs || []).map((spec) => ({
+      label: spec.label,
+      value: spec.value,
+    })),
+  };
 }

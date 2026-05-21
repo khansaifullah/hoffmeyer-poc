@@ -2,12 +2,9 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getSlug } from "@/lib/slug";
-
-const categories = [
-  "Conveyor Belts", "Industrial Hose", "Hydraulic Hose", "Hose Fittings & Adapters",
-  "Rubber & Gaskets", "Conveyor Components", "Bearings", "Motors & Control",
-  "Pipe Valves & Fittings", "Adhesives & Lubricants", "Packing & Sealing", "Safety Gear & Supplies"
-];
+import { categories } from "@/lib/categories";
+import ProductsDropdown from "./ProductsDropdown";
+import GlobalSearchBar from "./GlobalSearchBar";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,15 +81,8 @@ const Header = () => {
 
         {/* Mobile Search & Cart */}
         <div className="flex md:hidden items-center gap-4 px-4 pb-5 bg-white">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Search by item or keyword..."
-              className="w-full bg-[#E7E7E7] rounded-xl py-3 px-3 text-[16px] font-medium text-zinc-500 placeholder:text-[#D4D4D4] outline-none"
-            />
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#D4D4D4]">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-            </div>
+          <div className="min-w-0 flex-1">
+            <GlobalSearchBar variant="mobile" />
           </div>
           <button className="text-[#004b87] relative">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" /><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" /></svg>
@@ -103,20 +93,11 @@ const Header = () => {
         <div className="hidden md:block w-full bg-[#16568D] py-1.5">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4">
             <div className="flex items-center gap-8 text-white font-bold text-[16px]">
-              <button className="flex items-center gap-1.5 hover:text-gray-200 transition-colors">
-                Products <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
+              <ProductsDropdown />
             </div>
             
-            <div className="flex-1 max-w-4xl mx-8 relative">
-              <input
-                type="text"
-                placeholder="Search by item or keyword..."
-                className="w-full bg-white rounded-lg py-2 px-4 text-[15px] font-medium text-[#333] placeholder:text-[#ccc] outline-none"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#ccc]">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
-              </div>
+            <div className="flex-1 max-w-4xl mx-8">
+              <GlobalSearchBar variant="desktop" />
             </div>
 
             <div className="flex items-center gap-8 text-white font-bold text-[16px]">
@@ -169,14 +150,14 @@ const Header = () => {
               
               {/* Category Dropdown */}
               <div className={`flex flex-col gap-3 pl-4 overflow-hidden transition-all duration-300 ${categoriesOpen ? "max-h-[500px] mt-2 mb-2" : "max-h-0"}`}>
-                {categories.map((cat, idx) => (
+                {categories.map((category) => (
                   <Link 
-                    key={idx} 
-                    href={`/category/${getSlug(cat)}`} 
+                    key={category.name} 
+                    href={`/category/${getSlug(category.name)}`} 
                     className="text-[15px] font-medium text-gray-600 hover:text-[#004b87]"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    {cat.replace('\n', ' ')}
+                    {category.name.replace("\n", " ")}
                   </Link>
                 ))}
               </div>
