@@ -22,6 +22,7 @@ const navItems = [
   {
     href: "/admin/categories",
     label: "Categories",
+    addHref: "/admin/categories/new",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -31,6 +32,7 @@ const navItems = [
   {
     href: "/admin/brands",
     label: "Brands",
+    addHref: "/admin/brands/new",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -40,11 +42,24 @@ const navItems = [
   {
     href: "/admin/products",
     label: "Products",
+    addHref: "/admin/products/new",
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
         <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
         <line x1="12" y1="22.08" x2="12" y2="12" />
+      </svg>
+    ),
+  },
+  {
+    href: "/admin/products/import",
+    label: "Import CSV",
+    exact: true,
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
       </svg>
     ),
   },
@@ -92,17 +107,28 @@ export default function AdminShell({ children }) {
 
               return (
                 <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-colors ${
-                      active
-                        ? "bg-white/15 text-white"
-                        : "text-white/75 hover:bg-white/10 hover:text-white"
-                    }`}
-                  >
-                    <span className={active ? "text-white" : "text-white/60"}>{item.icon}</span>
-                    {item.label}
-                  </Link>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={item.href}
+                      className={`flex flex-1 items-center gap-3 rounded-lg px-3 py-2.5 text-[14px] font-semibold transition-colors ${
+                        active
+                          ? "bg-white/15 text-white"
+                          : "text-white/75 hover:bg-white/10 hover:text-white"
+                      }`}
+                    >
+                      <span className={active ? "text-white" : "text-white/60"}>{item.icon}</span>
+                      {item.label}
+                    </Link>
+                    {item.addHref && (
+                      <Link
+                        href={item.addHref}
+                        title={`Add ${item.label.slice(0, -1)}`}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/20 text-[18px] font-bold text-white/90 transition-colors hover:bg-white/10"
+                      >
+                        +
+                      </Link>
+                    )}
+                  </div>
                 </li>
               );
             })}

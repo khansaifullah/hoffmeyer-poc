@@ -12,10 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { categories } from "@/lib/categories";
-import { getSlug } from "@/lib/slug";
 
-export default function ProductsDropdown() {
+export default function ProductsDropdown({ categories = [] }) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger
@@ -43,8 +41,8 @@ export default function ProductsDropdown() {
 
           {categories.map((category) => (
             <DropdownMenuItem
-              key={category.name}
-              render={<Link href={`/category/${getSlug(category.name)}`} />}
+              key={category.id}
+              render={<Link href={`/category/${category.slug}`} />}
               className="cursor-pointer rounded-sm px-3 py-2 text-[14px] font-medium text-[#333] focus:bg-[#16568D]/12 focus:text-[#16568D]"
             >
               {category.name.replace(/\n/g, " ")}

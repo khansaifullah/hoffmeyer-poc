@@ -4,38 +4,38 @@ import Newsletter from "../../../../_components/Newsletter";
 import BrandHero from "../../../../_components/BrandHero";
 import CategorySubcategories from "../../../../_components/CategorySubcategories";
 import CategoryFeaturedProducts from "../../../../_components/CategoryFeaturedProducts";
-import { getCategoryName } from "@/lib/categories";
-import { getBrandBySlug } from "@/lib/brands";
-import { getProductsForCategory } from "@/lib/category-products";
-import { getSlug } from "@/lib/slug";
+import { getBrandBySlug, getCategoryBySlug } from "@/lib/api-server";
 
 export default async function BrandPage({ params }) {
   const { slug, brandSlug } = await params;
-  const brand = getBrandBySlug(brandSlug);
+  const [category, brand] = await Promise.all([
+    getCategoryBySlug(slug),
+    getBrandBySlug(brandSlug, { category: slug }),
+  ]);
 
-  if (!brand) {
+  if (!category || category.parentId || !brand) {
     notFound();
   }
 
-  const categoryName = getCategoryName(slug);
-  const products = getProductsForCategory(slug, brand.name);
+  const products = brand.products || [];
 
   return (
     <main className="flex min-h-screen flex-col bg-white">
       <Header />
 
-      <BrandHero brand={brand} categorySlug={slug} />
+      <BrandHero brand={brand} categorySlug={slug} categoryName={category.name} />
 
       <CategorySubcategories
-        slug={slug}
-        brandSlug={getSlug(brand.name)}
+        categorySlug={slug}
+        subcategories={category.children || []}
+        brandSlug={brand.slug}
         titleAccent="Shop"
         titleRest="by Category"
       />
 
       <CategoryFeaturedProducts
         products={products}
-        categoryName={categoryName}
+        categoryName={category.name}
         categorySlug={slug}
       />
 

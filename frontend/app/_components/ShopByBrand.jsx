@@ -1,13 +1,13 @@
 import Link from "next/link";
 import SectionHeading from "./SectionHeading";
 import BrandLogo from "./BrandLogo";
-import { getBrandsByNames } from "@/lib/brands";
-import { getCategoryBrandNames, getCategoryLabel } from "@/lib/category-content";
-import { getSlug } from "@/lib/slug";
 
-export default function ShopByBrand({ slug }) {
-  const label = getCategoryLabel(slug);
-  const brands = getBrandsByNames(getCategoryBrandNames(slug));
+export default function ShopByBrand({ categorySlug, categoryName, brands = [] }) {
+  if (brands.length === 0) {
+    return null;
+  }
+
+  const label = categoryName.toUpperCase();
 
   return (
     <section className="bg-[#f2f2f2] px-4 py-10 md:px-8 md:py-14">
@@ -17,8 +17,8 @@ export default function ShopByBrand({ slug }) {
         <div className="mt-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
           {brands.map((brand) => (
             <Link
-              key={brand.name}
-              href={`/category/${slug}/brand/${getSlug(brand.name)}`}
+              key={brand.id}
+              href={`/category/${categorySlug}/brand/${brand.slug}`}
               className="flex h-24 items-center justify-center border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28"
             >
               <BrandLogo brand={brand} size="lg" />
@@ -28,7 +28,7 @@ export default function ShopByBrand({ slug }) {
 
         <div className="mt-8 flex justify-center">
           <Link
-            href={`/category/${slug}`}
+            href={`/category/${categorySlug}`}
             className="border border-[#16568D] bg-white px-8 py-2.5 text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white"
           >
             View All Brands

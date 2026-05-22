@@ -25,9 +25,21 @@ class ProductController extends Controller
         }
 
         if ($request->filled('subcategory')) {
-            $subcategory = Category::query()->where('slug', $request->string('subcategory'))->first();
+            $subcategory = Category::query()
+                ->where('slug', $request->string('subcategory'))
+                ->whereNotNull('parent_id')
+                ->first();
+
             if ($subcategory) {
-                $query->where('category_id', $subcategory->id);
+                $hasDirectProducts = Product::query()
+                    ->where('category_id', $subcategory->id)
+                    ->exists();
+
+                if ($hasDirectProducts) {
+                    $query->where('category_id', $subcategory->id);
+                } elseif ($subcategory->parent_id) {
+                    $query->where('category_id', $subcategory->parent_id);
+                }
             }
         }
 

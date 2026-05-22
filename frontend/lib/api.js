@@ -193,6 +193,101 @@ export async function deleteProduct(id) {
   return apiFetch(`/admin/products/${id}`, { method: "DELETE" });
 }
 
+export async function importProducts(file) {
+  const csv = await file.text();
+  const result = await apiFetch("/admin/products/import", {
+    method: "POST",
+    body: JSON.stringify({ csv }),
+  });
+
+  return result.data;
+}
+
+export async function fetchAdminCategories(params = {}) {
+  const result = await apiFetch(`/admin/categories${buildQuery(params)}`);
+  return result.data.map(mapApiCategory);
+}
+
+export async function fetchAdminCategory(id) {
+  const result = await apiFetch(`/admin/categories/${id}`);
+  return mapApiCategory(result.data);
+}
+
+export async function createCategory(payload) {
+  const result = await apiFetch("/admin/categories", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return mapApiCategory(result.data);
+}
+
+export async function updateCategory(id, payload) {
+  const result = await apiFetch(`/admin/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return mapApiCategory(result.data);
+}
+
+export async function deleteCategory(id) {
+  return apiFetch(`/admin/categories/${id}`, { method: "DELETE" });
+}
+
+export function categoryToPayload(category) {
+  return {
+    parent_id: category.parent_id ? Number(category.parent_id) : null,
+    name: category.name,
+    slug: category.slug || "",
+    image: category.image || "",
+    description: category.description || "",
+    hero_description: category.hero_description || category.heroDescription || "",
+    sort_order: category.sort_order ?? category.sortOrder ?? 0,
+    is_active: category.is_active ?? category.isActive ?? true,
+  };
+}
+
+export async function fetchAdminBrands(params = {}) {
+  const result = await apiFetch(`/admin/brands${buildQuery(params)}`);
+  return result.data.map(mapApiBrand);
+}
+
+export async function fetchAdminBrand(id) {
+  const result = await apiFetch(`/admin/brands/${id}`);
+  return mapApiBrand(result.data);
+}
+
+export async function createBrand(payload) {
+  const result = await apiFetch("/admin/brands", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return mapApiBrand(result.data);
+}
+
+export async function updateBrand(id, payload) {
+  const result = await apiFetch(`/admin/brands/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return mapApiBrand(result.data);
+}
+
+export async function deleteBrand(id) {
+  return apiFetch(`/admin/brands/${id}`, { method: "DELETE" });
+}
+
+export function brandToPayload(brand) {
+  return {
+    name: brand.name,
+    slug: brand.slug || "",
+    logo: brand.logo || "",
+    description: brand.description || "",
+    is_featured: brand.is_featured ?? brand.isFeatured ?? false,
+    is_active: brand.is_active ?? brand.isActive ?? true,
+    sort_order: brand.sort_order ?? brand.sortOrder ?? 0,
+  };
+}
+
 export function productToPayload(product) {
   return {
     category_id: product.category_id,

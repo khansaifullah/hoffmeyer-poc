@@ -1,14 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getSlug } from "@/lib/slug";
-import { categories } from "@/lib/categories";
+import { fetchCategories } from "@/lib/api";
 import ProductsDropdown from "./ProductsDropdown";
 import GlobalSearchBar from "./GlobalSearchBar";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [categories, setCategories] = useState([]);
+
+  useEffect(() => {
+    fetchCategories({ top_level: true, active: true })
+      .then(setCategories)
+      .catch(() => setCategories([]));
+  }, []);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -93,7 +99,7 @@ const Header = () => {
         <div className="hidden md:block w-full bg-[#16568D] py-1.5">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4">
             <div className="flex items-center gap-8 text-white font-bold text-[16px]">
-              <ProductsDropdown />
+              <ProductsDropdown categories={categories} />
             </div>
             
             <div className="flex-1 max-w-4xl mx-8">
@@ -151,9 +157,9 @@ const Header = () => {
               {/* Category Dropdown */}
               <div className={`flex flex-col gap-3 pl-4 overflow-hidden transition-all duration-300 ${categoriesOpen ? "max-h-[500px] mt-2 mb-2" : "max-h-0"}`}>
                 {categories.map((category) => (
-                  <Link 
-                    key={category.name} 
-                    href={`/category/${getSlug(category.name)}`} 
+                  <Link
+                    key={category.id}
+                    href={`/category/${category.slug}`}
                     className="text-[15px] font-medium text-gray-600 hover:text-[#004b87]"
                     onClick={() => setIsMenuOpen(false)}
                   >

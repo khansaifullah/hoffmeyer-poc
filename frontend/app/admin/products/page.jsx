@@ -61,15 +61,23 @@ export default function AdminProductsPage() {
             {meta?.total ?? products.length} products in catalog.
           </p>
         </div>
-        <Link
-          href="/admin/products/new"
-          className="inline-flex h-11 items-center justify-center bg-[#16568D] px-5 text-[14px] font-bold text-white hover:bg-[#124570]"
-        >
-          Add Product
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/admin/products/new"
+            className="inline-flex h-11 shrink-0 items-center justify-center bg-[#16568D] px-5 text-[14px] font-bold text-white hover:bg-[#124570]"
+          >
+            + Add Product
+          </Link>
+          <Link
+            href="/admin/products/import"
+            className="inline-flex h-11 shrink-0 items-center justify-center border border-[#16568D] bg-white px-5 text-[14px] font-bold text-[#16568D] hover:bg-[#16568D]/5"
+          >
+            Import CSV
+          </Link>
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-6 flex flex-col gap-4 border border-gray-200 bg-white px-4 py-3 md:flex-row md:items-center md:justify-between">
         <input
           type="text"
           value={search}
@@ -80,6 +88,18 @@ export default function AdminProductsPage() {
           placeholder="Search products..."
           className="h-11 w-full max-w-md border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
         />
+        <Link
+          href="/admin/products/new"
+          className="inline-flex h-10 shrink-0 items-center justify-center border border-[#16568D] bg-white px-4 text-[13px] font-bold text-[#16568D] hover:bg-[#16568D]/5"
+        >
+          + New Product
+        </Link>
+        <Link
+          href="/admin/products/import"
+          className="inline-flex h-10 shrink-0 items-center justify-center bg-[#16568D] px-4 text-[13px] font-bold text-white hover:bg-[#124570]"
+        >
+          Import CSV
+        </Link>
       </div>
 
       {error && (
@@ -110,7 +130,10 @@ export default function AdminProductsPage() {
             ) : products.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  No products found.
+                  No products found.{" "}
+                  <Link href="/admin/products/new" className="font-semibold text-[#16568D] hover:underline">
+                    Add your first product
+                  </Link>
                 </td>
               </tr>
             ) : (

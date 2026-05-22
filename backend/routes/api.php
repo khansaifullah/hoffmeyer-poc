@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\Admin\BrandController as AdminBrandController;
 use App\Http\Controllers\Api\Admin\CatalogAdminController;
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\ProductImportController;
 use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BrandController;
@@ -31,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::prefix('admin')->group(function () {
         Route::get('/catalog', [CatalogAdminController::class, 'index']);
+        Route::post('/products/import', ProductImportController::class);
+        Route::apiResource('categories', AdminCategoryController::class);
+        Route::apiResource('brands', AdminBrandController::class);
         Route::apiResource('products', AdminProductController::class);
     });
 });

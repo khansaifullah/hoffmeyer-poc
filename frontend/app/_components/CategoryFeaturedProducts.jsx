@@ -8,8 +8,14 @@ export default function CategoryFeaturedProducts({ products, categoryName }) {
     enrichProduct(
       {
         ...product,
-        factoryOrder: index === 4,
-        brand: product.brand || "Hoffmeyer Industrial",
+        factoryOrder:
+          product.factoryOrder ||
+          product.availabilityStatus === "factory_order" ||
+          index === 4,
+        brand:
+          typeof product.brand === "string"
+            ? product.brand
+            : product.brand?.name || "Hoffmeyer Industrial",
       },
       index,
       categoryName

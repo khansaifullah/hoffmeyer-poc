@@ -23,6 +23,11 @@ class BrandController extends Controller
             $query->where('is_featured', true);
         }
 
+        if ($request->filled('category')) {
+            $categorySlug = $request->string('category');
+            $query->whereHas('products.category', fn ($categoryQuery) => $categoryQuery->where('slug', $categorySlug));
+        }
+
         $brands = $query->get();
 
         return response()->json(['data' => BrandResource::collection($brands)]);

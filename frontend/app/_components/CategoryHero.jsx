@@ -1,8 +1,11 @@
 import Breadcrumbs from "./Breadcrumbs";
-import { getCategoryName } from "@/lib/categories";
 
-export default function CategoryHero({ slug, description }) {
-  const categoryName = getCategoryName(slug);
+export default function CategoryHero({ category, description }) {
+  const categoryName = category.name;
+  const heroDescription =
+    description ||
+    category.heroDescription ||
+    `Browse ${categoryName} products, trusted brands, and top sellers for your operation.`;
 
   return (
     <section className="bg-[#40A8F3] text-white">
@@ -19,8 +22,7 @@ export default function CategoryHero({ slug, description }) {
           {categoryName}
         </h1>
         <p className="mt-3 max-w-3xl text-[16px] text-white/85 md:text-[18px]">
-          {description ||
-            `Browse ${categoryName} products, trusted brands, and top sellers for your operation.`}
+          {heroDescription}
         </p>
       </div>
     </section>

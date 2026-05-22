@@ -1,9 +1,7 @@
 import Breadcrumbs from "./Breadcrumbs";
 import BrandLogo from "./BrandLogo";
-import { getCategoryName } from "@/lib/categories";
 
-export default function BrandHero({ brand, categorySlug }) {
-  const categoryName = getCategoryName(categorySlug);
+export default function BrandHero({ brand, categorySlug, categoryName }) {
 
   return (
     <section className="bg-[#40A8F3] text-white">

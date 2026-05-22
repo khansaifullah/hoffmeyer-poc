@@ -1,5 +1,4 @@
 import Breadcrumbs from "./Breadcrumbs";
-import { getCategoryName } from "@/lib/categories";
 
 export default function ListingHero({
   categorySlug,
@@ -9,7 +8,7 @@ export default function ListingHero({
   brandName = null,
   brandSlug = null,
 }) {
-  const parentName = categoryName || getCategoryName(categorySlug);
+  const parentName = categoryName || categorySlug.replace(/-/g, " ");
   const displayTitle = title || parentName;
 
   const breadcrumbItems = [
