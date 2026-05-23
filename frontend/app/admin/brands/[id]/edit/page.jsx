@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import BrandForm from "../../../_components/BrandForm";
 import { fetchAdminBrand } from "@/lib/api";
+import { AdminEditPageSkeleton } from "../../../_components/AdminSkeletons";
+import { AdminAlert, AdminFormCard, AdminPageHeader } from "../../../_components/AdminUi";
 
 export default function EditBrandPage({ params }) {
   const [brandId, setBrandId] = useState(null);
@@ -28,24 +30,19 @@ export default function EditBrandPage({ params }) {
   }, [params]);
 
   if (loading) {
-    return <p className="text-[15px] text-gray-600">Loading brand...</p>;
+    return <AdminEditPageSkeleton fields={6} />;
   }
 
   if (error || !brand) {
-    return (
-      <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
-        {error || "Brand not found."}
-      </p>
-    );
+    return <AdminAlert>{error || "Brand not found."}</AdminAlert>;
   }
 
   return (
-    <div>
-      <h1 className="text-[28px] font-bold text-[#333]">Edit Brand</h1>
-      <p className="mt-2 text-[15px] text-gray-600">{brand.name}</p>
-      <div className="mt-8 max-w-3xl border border-gray-200 bg-white p-6">
+    <div className="space-y-6">
+      <AdminPageHeader title="Edit Brand" description={brand.name} />
+      <AdminFormCard>
         <BrandForm brandId={brandId} initialBrand={brand} />
-      </div>
+      </AdminFormCard>
     </div>
   );
 }

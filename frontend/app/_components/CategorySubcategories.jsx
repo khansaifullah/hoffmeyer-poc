@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { pillRadius } from "@/lib/ui-presets";
 import SectionHeading from "./SectionHeading";
 import { getSubcategoryHref } from "@/lib/catalog-urls";
 
@@ -25,9 +26,9 @@ export default function CategorySubcategories({
             <Link
               key={item.slug}
               href={getSubcategoryHref(categorySlug, item.slug, brandSlug)}
-              className="group inline-flex h-14 max-w-full items-center gap-3 rounded-lg border border-gray-200 bg-white pr-4 transition-colors hover:border-[#16568D] md:h-16 md:pr-5"
+              className={`group inline-flex h-14 max-w-full items-center gap-3 ${pillRadius} border border-gray-200 bg-white pr-4 transition-colors hover:border-[#16568D] md:h-16 md:pr-5`}
             >
-              <div className="flex h-full w-14 shrink-0 items-center justify-center rounded-l-[7px] border-r border-gray-100 bg-[#fafafa] p-2 md:w-16">
+              <div className={`flex h-full w-14 shrink-0 items-center justify-center rounded-l-lg border-r border-gray-100 bg-[#fafafa] p-2 md:w-16`}>
                 <img
                   src={item.image || "/images/products/bearing.png"}
                   alt={item.name}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getCurrentUser, getToken } from "@/lib/auth";
+import { AdminShellSkeleton } from "./AdminSkeletons";
 
 export default function AuthGuard({ children }) {
   const router = useRouter();
@@ -27,11 +28,7 @@ export default function AuthGuard({ children }) {
   }, [router]);
 
   if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f5f5f5] text-[14px] text-gray-500">
-        Checking authentication...
-      </div>
-    );
+    return <AdminShellSkeleton />;
   }
 
   return children;

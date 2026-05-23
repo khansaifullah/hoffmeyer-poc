@@ -18,6 +18,14 @@ import {
   parsePrice,
   PRICE_RANGE_FILTERS,
 } from "@/lib/product";
+import {
+  addCompareSlug,
+  getCompareSlugs,
+  MAX_COMPARE_PRODUCTS,
+  removeCompareSlug,
+} from "@/lib/product-compare";
+import { buttonRadius, cardRadius, inputRadius, menuRadius } from "@/lib/ui-presets";
+import CompareBar from "./CompareBar";
 import StockBadge from "./StockBadge";
 
 const SORT_OPTIONS = [
@@ -29,10 +37,10 @@ const SORT_OPTIONS = [
 
 function ProductListRow({ product, quantity, onQuantityChange, compared, onCompareChange }) {
   return (
-    <article className="border border-gray-200 bg-white">
+    <article className={`${cardRadius} overflow-hidden border border-gray-200 bg-white`}>
       <div className="flex flex-col lg:flex-row lg:items-stretch">
         <div className="flex items-start gap-4 p-4 lg:w-[72%] lg:border-r lg:border-gray-200">
-          <div className="h-28 w-28 shrink-0 border border-gray-200 bg-white p-2">
+          <div className={`h-28 w-28 shrink-0 ${cardRadius} border border-gray-200 bg-white p-2`}>
             <Link href={`/product/${product.slug}`}>
               <img
                 src={product.image}
@@ -88,13 +96,13 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
               min="1"
               value={quantity}
               onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))}
-              className="h-9 w-16 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87]"
+              className={`h-9 w-16 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87] ${inputRadius}`}
             />
           </div>
 
           <button
             type="button"
-            className="h-11 w-full bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63]"
+            className={`h-11 w-full bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
           >
             Add to Cart
           </button>
@@ -103,11 +111,10 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
 
       <div className="border-t border-gray-200 px-4 py-2.5">
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-gray-600">
-          <input
-            type="checkbox"
+          <Checkbox
             checked={compared}
-            onChange={(event) => onCompareChange(event.target.checked)}
-            className="h-4 w-4 rounded border-gray-300"
+            onCheckedChange={(checked) => onCompareChange(Boolean(checked))}
+            className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
           />
           Compare
         </label>
@@ -116,10 +123,10 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
   );
 }
 
-function ProductGridCard({ product, quantity, onQuantityChange }) {
+function ProductGridCard({ product, quantity, onQuantityChange, compared, onCompareChange }) {
   return (
-    <article className="flex h-full flex-col border border-gray-200 bg-white p-4">
-      <Link href={`/product/${product.slug}`} className="mb-4 flex aspect-square items-center justify-center border border-gray-100 bg-[#fafafa] p-4">
+    <article className={`flex h-full flex-col ${cardRadius} border border-gray-200 bg-white p-4`}>
+      <Link href={`/product/${product.slug}`} className={`mb-4 flex aspect-square items-center justify-center ${cardRadius} border border-gray-100 bg-[#fafafa] p-4`}>
         <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain" />
       </Link>
       <h3 className="text-[16px] font-bold leading-snug text-[#004b87]">
@@ -139,15 +146,24 @@ function ProductGridCard({ product, quantity, onQuantityChange }) {
           min="1"
           value={quantity}
           onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))}
-          className="h-9 w-14 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87]"
+          className={`h-9 w-14 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87] ${inputRadius}`}
         />
         <button
           type="button"
-          className="h-9 flex-1 bg-[#004b87] text-[13px] font-bold text-white transition-colors hover:bg-[#003a63]"
+          className={`h-9 flex-1 bg-[#004b87] text-[13px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
         >
           Add to Cart
         </button>
       </div>
+
+      <label className="mt-3 flex cursor-pointer items-center gap-2 border-t border-gray-200 pt-3 text-[13px] text-gray-600">
+        <Checkbox
+          checked={compared}
+          onCheckedChange={(checked) => onCompareChange(Boolean(checked))}
+          className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
+        />
+        Compare
+      </label>
     </article>
   );
 }
@@ -226,8 +242,17 @@ export default function CategoryProductListing({
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [quantities, setQuantities] = useState({});
   const [compareSet, setCompareSet] = useState(new Set());
+  const [compareMessage, setCompareMessage] = useState("");
   const [selectedMaterials, setSelectedMaterials] = useState(new Set());
   const [selectedPriceRanges, setSelectedPriceRanges] = useState(new Set());
+
+  useEffect(() => {
+    setCompareSet(new Set(getCompareSlugs()));
+
+    const syncCompare = () => setCompareSet(new Set(getCompareSlugs()));
+    window.addEventListener("hoffmeyer-compare-change", syncCompare);
+    return () => window.removeEventListener("hoffmeyer-compare-change", syncCompare);
+  }, []);
 
   const enrichedProducts = useMemo(
     () => products.map((product, index) => enrichProduct(product, index, categoryName)),
@@ -315,16 +340,27 @@ export default function CategoryProductListing({
   };
 
   const toggleCompare = (slug, checked) => {
-    setCompareSet((current) => {
-      const next = new Set(current);
-      if (checked) next.add(slug);
-      else next.delete(slug);
-      return next;
-    });
+    if (checked) {
+      const current = getCompareSlugs();
+      if (current.length >= MAX_COMPARE_PRODUCTS && !current.includes(slug)) {
+        setCompareMessage(`You can compare up to ${MAX_COMPARE_PRODUCTS} products at a time.`);
+        return;
+      }
+
+      const next = addCompareSlug(slug);
+      setCompareSet(new Set(next));
+      setCompareMessage("");
+      return;
+    }
+
+    const next = removeCompareSlug(slug);
+    setCompareSet(new Set(next));
+    setCompareMessage("");
   };
 
   return (
-    <div className="flex flex-col gap-8 lg:flex-row">
+    <>
+    <div className={`flex flex-col gap-8 lg:flex-row ${compareSet.size ? "pb-28" : ""}`}>
       <aside className="hidden w-56 shrink-0 lg:block">
         <ProductFilters
           selectedMaterials={selectedMaterials}
@@ -338,7 +374,7 @@ export default function CategoryProductListing({
 
       <div className="min-w-0 flex-1">
         <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex w-full max-w-md overflow-hidden border border-gray-300">
+          <div className={`flex w-full max-w-md overflow-hidden border border-gray-300 ${inputRadius}`}>
             <input
               type="text"
               value={search}
@@ -362,18 +398,18 @@ export default function CategoryProductListing({
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className="flex items-center gap-2 border border-gray-200 px-3 py-2 text-[13px] font-bold text-[#333] lg:hidden"
+              className={`flex items-center gap-2 border border-gray-200 px-3 py-2 text-[13px] font-bold text-[#333] lg:hidden ${buttonRadius}`}
             >
               Filters
             </button>
 
             <Select value={sortBy} onValueChange={setSortBy} modal={false}>
-              <SelectTrigger className="h-10 min-w-[220px] rounded-none border-gray-300 bg-white px-3 text-[14px] text-[#333] shadow-none focus-visible:border-[#16568D] focus-visible:ring-0">
+              <SelectTrigger className={`h-10 min-w-[220px] border-gray-300 bg-white px-3 text-[14px] text-[#333] shadow-none focus-visible:border-[#16568D] focus-visible:ring-0 ${buttonRadius}`}>
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent
                 alignItemWithTrigger={false}
-                className="rounded-sm border border-gray-200 bg-white shadow-md"
+                className={`${menuRadius} border border-gray-200 bg-white shadow-md`}
               >
                 {SORT_OPTIONS.map((option) => (
                   <SelectItem
@@ -387,7 +423,7 @@ export default function CategoryProductListing({
               </SelectContent>
             </Select>
 
-            <div className="flex overflow-hidden border border-gray-300">
+            <div className={`flex overflow-hidden border border-gray-300 ${buttonRadius}`}>
               <button
                 type="button"
                 onClick={() => setView("list")}
@@ -418,6 +454,12 @@ export default function CategoryProductListing({
           {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} found
         </p>
 
+        {compareMessage ? (
+          <p className="mb-4 rounded border border-orange-200 bg-orange-50 px-4 py-3 text-[13px] text-orange-700">
+            {compareMessage}
+          </p>
+        ) : null}
+
         <div
           className={`mb-6 overflow-hidden transition-all duration-300 lg:hidden ${
             showMobileFilters ? "max-h-[420px] rounded border border-gray-200 bg-gray-50 p-4" : "max-h-0"
@@ -434,7 +476,7 @@ export default function CategoryProductListing({
         </div>
 
         {filteredProducts.length === 0 ? (
-          <div className="border border-gray-200 bg-white px-6 py-16 text-center text-gray-500">
+          <div className={`${cardRadius} border border-gray-200 bg-white px-6 py-16 text-center text-gray-500`}>
             No products match your filters.
             {hasActiveFilters && (
               <button
@@ -447,7 +489,7 @@ export default function CategoryProductListing({
             )}
           </div>
         ) : view === "list" ? (
-          <div className="space-y-0 border border-gray-200">
+          <div className="space-y-4">
             {filteredProducts.map((product) => (
               <ProductListRow
                 key={product.slug}
@@ -467,11 +509,15 @@ export default function CategoryProductListing({
                 product={product}
                 quantity={quantities[product.slug] ?? 1}
                 onQuantityChange={(quantity) => setQuantity(product.slug, quantity)}
+                compared={compareSet.has(product.slug)}
+                onCompareChange={(checked) => toggleCompare(product.slug, checked)}
               />
             ))}
           </div>
         )}
       </div>
     </div>
+    <CompareBar />
+    </>
   );
 }

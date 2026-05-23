@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { formatPrice, getProductSku } from "@/lib/product";
+import { buttonRadius, cardRadius, inputRadius } from "@/lib/ui-presets";
 
 const SIZE_OPTIONS = ['12"', '24"', '36"', '48"'];
 
@@ -23,7 +24,7 @@ export default function ProductDetail({ product }) {
   return (
     <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2 lg:gap-14">
       <div>
-        <div className="flex aspect-square items-center justify-center rounded-sm border border-gray-200 bg-[#f5f5f5] p-10">
+        <div className={`flex aspect-square items-center justify-center ${cardRadius} border border-gray-200 bg-[#f5f5f5] p-10`}>
           <img
             src={galleryImages[activeImage]}
             alt={product.name}
@@ -37,7 +38,7 @@ export default function ProductDetail({ product }) {
               key={index}
               type="button"
               onClick={() => setActiveImage(index)}
-              className={`flex aspect-square items-center justify-center border bg-[#f5f5f5] p-3 transition-colors ${
+              className={`flex aspect-square items-center justify-center ${cardRadius} border bg-[#f5f5f5] p-3 transition-colors ${
                 activeImage === index
                   ? "border-[#16568D] ring-1 ring-[#16568D]"
                   : "border-gray-200 hover:border-gray-300"
@@ -82,7 +83,7 @@ export default function ProductDetail({ product }) {
                 key={size}
                 type="button"
                 onClick={() => setSelectedSize(size)}
-                className={`min-w-[56px] border px-4 py-2.5 text-[14px] font-semibold transition-colors ${
+                className={`min-w-[56px] border px-4 py-2.5 text-[14px] font-semibold transition-colors ${buttonRadius} ${
                   selectedSize === size
                     ? "border-[#16568D] bg-[#16568D] text-white"
                     : "border-gray-300 bg-white text-gray-700 hover:border-[#16568D]"
@@ -95,7 +96,7 @@ export default function ProductDetail({ product }) {
         </div>
 
         <div className="mt-8 flex flex-col gap-4">
-          <div className="flex h-12 w-full max-w-[148px] items-center border border-gray-300 bg-white sm:max-w-none sm:w-fit">
+          <div className={`flex h-12 w-full max-w-[148px] items-center border border-gray-300 bg-white sm:max-w-none sm:w-fit ${inputRadius}`}>
             <button
               type="button"
               onClick={decreaseQty}
@@ -119,7 +120,7 @@ export default function ProductDetail({ product }) {
 
           <Button
             type="button"
-            className="h-14 w-full rounded-sm bg-[#16568D] px-6 text-[16px] font-bold hover:bg-[#124570] sm:h-12"
+            className={`h-14 w-full bg-[#16568D] px-6 text-[16px] font-bold hover:bg-[#124570] sm:h-12 ${buttonRadius}`}
           >
             Request a Quote
           </Button>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { fetchGlobalSearch } from "@/lib/api";
+import { inputRadius, menuRadius } from "@/lib/ui-presets";
 
 const LABEL_STYLES = {
   Product: "bg-[#16568D]/10 text-[#16568D]",
@@ -136,8 +137,8 @@ export default function GlobalSearchBar({ variant = "desktop" }) {
           aria-controls={listboxId}
           className={
             isMobile
-              ? "w-full rounded-xl bg-[#E7E7E7] py-3 pl-3 pr-11 text-[16px] font-medium text-zinc-700 placeholder:text-[#D4D4D4] outline-none"
-              : "w-full rounded-lg bg-white py-2 pl-4 pr-11 text-[15px] font-medium text-[#333] placeholder:text-[#ccc] outline-none"
+              ? `w-full bg-[#E7E7E7] py-3 pl-3 pr-11 text-[16px] font-medium text-zinc-700 placeholder:text-[#D4D4D4] outline-none ${inputRadius}`
+              : `w-full bg-white py-2 pl-4 pr-11 text-[15px] font-medium text-[#333] placeholder:text-[#ccc] outline-none ${inputRadius}`
           }
         />
         <div
@@ -152,7 +153,7 @@ export default function GlobalSearchBar({ variant = "desktop" }) {
       {open && query.trim().length >= 2 && (
         <div
           id={listboxId}
-          className={`absolute z-50 mt-2 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] ${
+          className={`absolute z-50 mt-2 overflow-hidden ${menuRadius} border border-gray-200 bg-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] ${
             isMobile ? "left-0 right-0 max-h-80 overflow-y-auto" : "left-0 right-0 max-h-96 overflow-y-auto"
           }`}
         >

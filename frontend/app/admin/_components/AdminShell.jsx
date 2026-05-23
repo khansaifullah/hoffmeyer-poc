@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { getStoredUser, logout } from "@/lib/auth";
+import { AdminConfirmDialog } from "./AdminUi";
+import { Toaster } from "@/components/ui/sonner";
 
 const navItems = [
   {
@@ -57,14 +63,23 @@ export default function AdminShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState(null);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setUser(getStoredUser());
   }, []);
 
-  async function handleLogout() {
-    await logout();
-    router.push("/login");
+  async function confirmLogout() {
+    setLoggingOut(true);
+
+    try {
+      await logout();
+      router.push("/login");
+    } finally {
+      setLoggingOut(false);
+      setLogoutOpen(false);
+    }
   }
 
   return (
@@ -75,23 +90,19 @@ export default function AdminShell({ children }) {
             <img
               src="/images/brand/logo.png"
               alt="Hoffmeyer"
-              className="h-8 brightness-0 invert object-contain"
+              className="h-8 object-contain brightness-0 invert"
             />
           </Link>
-          <p className="mt-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/60">
+          <Badge variant="secondary" className="mt-3 bg-white/10 text-[10px] uppercase tracking-[0.18em] text-white/80">
             Admin Panel
-          </p>
+          </Badge>
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-white/50">
-            Catalog
-          </p>
+          <p className="mb-2 px-3 text-[11px] font-bold uppercase tracking-wider text-white/50">Catalog</p>
           <ul className="space-y-1">
             {navItems.map((item) => {
-              const active = item.exact
-                ? pathname === item.href
-                : pathname.startsWith(item.href);
+              const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
               return (
                 <li key={item.href}>
@@ -111,7 +122,7 @@ export default function AdminShell({ children }) {
                       <Link
                         href={item.addHref}
                         title={`Add ${item.label.slice(0, -1)}`}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-white/20 text-[18px] font-bold text-white/90 transition-colors hover:bg-white/10"
+                        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/20 bg-transparent text-[18px] font-bold text-white/90 transition-colors hover:bg-white/10 hover:text-white"
                       >
                         +
                       </Link>
@@ -124,44 +135,67 @@ export default function AdminShell({ children }) {
         </nav>
 
         <div className="border-t border-white/10 p-4">
-          {user && (
+          {user ? (
             <div className="mb-3 px-2">
               <p className="truncate text-[13px] font-semibold text-white">{user.name}</p>
               <p className="truncate text-[12px] text-white/60">{user.email}</p>
             </div>
+          ) : (
+            <div className="mb-3 space-y-2 px-2">
+              <Skeleton className="h-4 w-28 bg-white/15" />
+              <Skeleton className="h-3 w-36 bg-white/10" />
+            </div>
           )}
           <Link
             href="/"
-            className="mb-2 flex w-full items-center justify-center rounded-lg border border-white/20 px-3 py-2 text-[13px] font-semibold text-white/90 transition-colors hover:bg-white/10"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "mb-2 h-10 w-full border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+            )}
           >
             View Storefront
           </Link>
-          <button
+          <Button
             type="button"
-            onClick={handleLogout}
-            className="flex w-full items-center justify-center rounded-lg bg-white/10 px-3 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-white/20"
+            onClick={() => setLogoutOpen(true)}
+            className="h-10 w-full bg-white/10 text-white hover:bg-white/20"
           >
             Logout
-          </button>
+          </Button>
         </div>
       </aside>
 
       <div className="ml-64 min-h-screen">
-        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white px-8 py-4">
-          <div className="flex items-center justify-between">
-            <p className="text-[13px] font-medium text-gray-500">
-              Hoffmeyer B2B Catalog Management
-            </p>
-            {user && (
-              <p className="text-[13px] text-gray-600">
+        <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 px-8 py-4 backdrop-blur">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-muted-foreground">Hoffmeyer B2B Catalog Management</p>
+            {user ? (
+              <p className="text-sm text-muted-foreground">
                 Signed in as <span className="font-semibold text-[#004b87]">{user.name}</span>
               </p>
+            ) : (
+              <Skeleton className="h-4 w-40" />
             )}
           </div>
         </header>
 
         <main className="px-8 py-8">{children}</main>
       </div>
+
+      <AdminConfirmDialog
+        open={logoutOpen}
+        onOpenChange={(open) => {
+          if (!loggingOut) setLogoutOpen(open);
+        }}
+        title="Log out?"
+        description="You will be signed out of the admin panel and returned to the login page."
+        confirmLabel="Log out"
+        cancelLabel="Stay signed in"
+        onConfirm={confirmLogout}
+        loading={loggingOut}
+        variant="default"
+      />
+      <Toaster position="top-right" richColors closeButton />
     </div>
   );
 }

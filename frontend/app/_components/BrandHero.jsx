@@ -1,5 +1,6 @@
 import Breadcrumbs from "./Breadcrumbs";
 import BrandLogo from "./BrandLogo";
+import { cardRadius } from "@/lib/ui-presets";
 
 export default function BrandHero({ brand, categorySlug, categoryName }) {
 
@@ -29,7 +30,7 @@ export default function BrandHero({ brand, categorySlug, categoryName }) {
             </p>
           </div>
 
-          <div className="flex h-28 w-full shrink-0 items-center justify-center rounded-sm border border-white/30 bg-white px-8 md:h-32 md:w-52">
+          <div className={`flex h-28 w-full shrink-0 items-center justify-center ${cardRadius} border border-white/30 bg-white px-8 md:h-32 md:w-52`}>
             <BrandLogo brand={brand} size="lg" className="max-h-16" />
           </div>
         </div>

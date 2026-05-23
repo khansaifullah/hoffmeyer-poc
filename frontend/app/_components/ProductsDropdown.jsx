@@ -31,7 +31,7 @@ export default function ProductsDropdown({ categories = [] }) {
       <DropdownMenuContent
         align="start"
         sideOffset={10}
-        className="max-h-80 min-w-64 overflow-y-auto rounded-sm border border-[#d9e0e8] bg-white p-1 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
+        className="max-h-80 min-w-64 overflow-y-auto border border-[#d9e0e8] bg-white p-1 shadow-[0_8px_20px_rgba(0,0,0,0.12)]"
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel className="px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-[#16568D]">
@@ -43,7 +43,7 @@ export default function ProductsDropdown({ categories = [] }) {
             <DropdownMenuItem
               key={category.id}
               render={<Link href={`/category/${category.slug}`} />}
-              className="cursor-pointer rounded-sm px-3 py-2 text-[14px] font-medium text-[#333] focus:bg-[#16568D]/12 focus:text-[#16568D]"
+              className="cursor-pointer px-3 py-2 text-[14px] font-medium text-[#333] focus:bg-[#16568D]/12 focus:text-[#16568D]"
             >
               {category.name.replace(/\n/g, " ")}
             </DropdownMenuItem>

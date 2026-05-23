@@ -2,6 +2,7 @@ import Link from "next/link";
 import SectionHeading from "./SectionHeading";
 import StockBadge from "./StockBadge";
 import { enrichProduct, formatPrice } from "@/lib/product";
+import { cardRadius } from "@/lib/ui-presets";
 
 export default function CategoryFeaturedProducts({ products, categoryName }) {
   const featured = products.slice(0, 5).map((product, index) =>
@@ -32,9 +33,9 @@ export default function CategoryFeaturedProducts({ products, categoryName }) {
               <Link
                 key={product.slug}
                 href={`/product/${product.slug}`}
-                className="group flex flex-col border border-gray-200 bg-white p-4 transition-colors hover:border-[#16568D]"
+                className={`group flex flex-col ${cardRadius} border border-gray-200 bg-white p-4 transition-colors hover:border-[#16568D]`}
               >
-                <div className="mb-4 flex aspect-square items-center justify-center bg-[#fafafa] p-3">
+                <div className={`mb-4 flex aspect-square items-center justify-center ${cardRadius} bg-[#fafafa] p-3`}>
                   <img
                     src={product.image}
                     alt={product.name}

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import CategoryForm from "../../../_components/CategoryForm";
 import { fetchAdminCategory } from "@/lib/api";
+import { AdminEditPageSkeleton } from "../../../_components/AdminSkeletons";
+import { AdminAlert, AdminFormCard, AdminPageHeader } from "../../../_components/AdminUi";
 
 export default function EditCategoryPage({ params }) {
   const [categoryId, setCategoryId] = useState(null);
@@ -28,24 +30,19 @@ export default function EditCategoryPage({ params }) {
   }, [params]);
 
   if (loading) {
-    return <p className="text-[15px] text-gray-600">Loading category...</p>;
+    return <AdminEditPageSkeleton fields={6} />;
   }
 
   if (error || !category) {
-    return (
-      <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
-        {error || "Category not found."}
-      </p>
-    );
+    return <AdminAlert>{error || "Category not found."}</AdminAlert>;
   }
 
   return (
-    <div>
-      <h1 className="text-[28px] font-bold text-[#333]">Edit Category</h1>
-      <p className="mt-2 text-[15px] text-gray-600">{category.name}</p>
-      <div className="mt-8 max-w-3xl border border-gray-200 bg-white p-6">
+    <div className="space-y-6">
+      <AdminPageHeader title="Edit Category" description={category.name} />
+      <AdminFormCard>
         <CategoryForm categoryId={categoryId} initialCategory={category} />
-      </div>
+      </AdminFormCard>
     </div>
   );
 }

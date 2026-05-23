@@ -1,14 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { deleteBrand, fetchAdminBrands } from "@/lib/api";
+import { AdminTableSkeleton } from "../_components/AdminSkeletons";
+import {
+  AdminAlert,
+  AdminConfirmDialog,
+  AdminLinkButton,
+  AdminPageHeader,
+  AdminStatusBadge,
+  AdminTableActions,
+  AdminToolbarCard,
+  AdminYesBadge,
+  adminToastError,
+  adminToastSuccess,
+} from "../_components/AdminUi";
 
 export default function AdminBrandsPage() {
   const [brands, setBrands] = useState([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   useEffect(() => {
     async function load() {
@@ -24,113 +47,112 @@ export default function AdminBrandsPage() {
     load();
   }, []);
 
-  async function handleDelete(id) {
-    if (!window.confirm("Delete this brand?")) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
 
-    setDeletingId(id);
+    setDeletingId(deleteTarget.id);
     setError("");
 
     try {
-      await deleteBrand(id);
-      setBrands((current) => current.filter((brand) => brand.id !== id));
+      await deleteBrand(deleteTarget.id);
+      setBrands((current) => current.filter((brand) => brand.id !== deleteTarget.id));
+      adminToastSuccess("Brand deleted.", `"${deleteTarget.name}" was removed from the catalog.`);
+      setDeleteTarget(null);
     } catch (err) {
-      setError(err.message || "Failed to delete brand");
+      const message = err.message || "Failed to delete brand";
+      setError(message);
+      adminToastError("Could not delete brand.", message);
     } finally {
       setDeletingId(null);
     }
   }
 
   return (
-    <div>
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-[28px] font-bold text-[#333]">Brands</h1>
-          <p className="mt-2 text-[15px] text-gray-600">{brands.length} brands in catalog.</p>
-        </div>
-        <Link
-          href="/admin/brands/new"
-          className="inline-flex h-11 shrink-0 items-center justify-center bg-[#16568D] px-5 text-[14px] font-bold text-white hover:bg-[#124570]"
-        >
-          + Add Brand
-        </Link>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader title="Brands" description={`${brands.length} brands in catalog.`}>
+        <AdminLinkButton href="/admin/brands/new">+ Add Brand</AdminLinkButton>
+      </AdminPageHeader>
 
-      <div className="mt-6 flex items-center justify-between gap-4 border border-gray-200 bg-white px-4 py-3">
-        <p className="text-[14px] text-gray-600">Manage manufacturer brands and logos.</p>
-        <Link
-          href="/admin/brands/new"
-          className="inline-flex h-10 items-center justify-center border border-[#16568D] bg-white px-4 text-[13px] font-bold text-[#16568D] hover:bg-[#16568D]/5"
-        >
+      <AdminToolbarCard>
+        <p className="text-sm text-muted-foreground">Manage manufacturer brands and logos.</p>
+        <AdminLinkButton href="/admin/brands/new" variant="outline">
           + New Brand
-        </Link>
-      </div>
+        </AdminLinkButton>
+      </AdminToolbarCard>
 
-      {error && (
-        <p className="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
-          {error}
-        </p>
+      {error ? <AdminAlert>{error}</AdminAlert> : null}
+
+      {loading ? (
+        <AdminTableSkeleton columns={6} rows={8} />
+      ) : (
+        <Card className="shadow-sm">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Slug</TableHead>
+                  <TableHead>Products</TableHead>
+                  <TableHead>Featured</TableHead>
+                  <TableHead>Active</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {brands.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                      No brands found.{" "}
+                      <Link href="/admin/brands/new" className="font-semibold text-[#16568D] hover:underline">
+                        Add your first brand
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  brands.map((brand) => (
+                    <TableRow key={brand.id}>
+                      <TableCell className="font-medium text-[#333]">{brand.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{brand.slug}</TableCell>
+                      <TableCell className="text-muted-foreground">{brand.productsCount ?? 0}</TableCell>
+                      <TableCell>
+                        <AdminYesBadge value={brand.isFeatured} />
+                      </TableCell>
+                      <TableCell>
+                        <AdminStatusBadge active={brand.isActive} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <AdminTableActions
+                          editHref={`/admin/brands/${brand.id}/edit`}
+                          onDelete={() => setDeleteTarget({ id: brand.id, name: brand.name })}
+                          deleting={deletingId === brand.id}
+                          editLabel="Edit brand"
+                          deleteLabel="Delete brand"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
-      <div className="mt-6 overflow-x-auto border border-gray-200 bg-white">
-        <table className="min-w-full text-left text-[14px]">
-          <thead className="border-b border-gray-200 bg-gray-50 text-[12px] uppercase tracking-wide text-gray-500">
-            <tr>
-              <th className="px-4 py-3 font-semibold">Name</th>
-              <th className="px-4 py-3 font-semibold">Slug</th>
-              <th className="px-4 py-3 font-semibold">Products</th>
-              <th className="px-4 py-3 font-semibold">Featured</th>
-              <th className="px-4 py-3 font-semibold">Active</th>
-              <th className="px-4 py-3 font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  Loading brands...
-                </td>
-              </tr>
-            ) : brands.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  No brands found.{" "}
-                  <Link href="/admin/brands/new" className="font-semibold text-[#16568D] hover:underline">
-                    Add your first brand
-                  </Link>
-                </td>
-              </tr>
-            ) : (
-              brands.map((brand) => (
-                <tr key={brand.id} className="border-b border-gray-100">
-                  <td className="px-4 py-3 font-medium text-[#333]">{brand.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{brand.slug}</td>
-                  <td className="px-4 py-3 text-gray-600">{brand.productsCount ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600">{brand.isFeatured ? "Yes" : "—"}</td>
-                  <td className="px-4 py-3 text-gray-600">{brand.isActive ? "Yes" : "No"}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <Link
-                        href={`/admin/brands/${brand.id}/edit`}
-                        className="font-semibold text-[#16568D] hover:underline"
-                      >
-                        Edit
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(brand.id)}
-                        disabled={deletingId === brand.id}
-                        className="font-semibold text-red-600 hover:underline disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <AdminConfirmDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && !deletingId) setDeleteTarget(null);
+        }}
+        title="Delete brand?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.name}" will be permanently removed from the catalog. This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Delete brand"
+        onConfirm={confirmDelete}
+        loading={Boolean(deletingId)}
+      />
     </div>
   );
 }

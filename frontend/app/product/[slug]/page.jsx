@@ -3,6 +3,7 @@ import Breadcrumbs from "../../_components/Breadcrumbs";
 import Newsletter from "../../_components/Newsletter";
 import ProductDetail from "../../_components/ProductDetail";
 import { getProductBySlug } from "@/lib/api-server";
+import { cardRadius } from "@/lib/ui-presets";
 import { notFound } from "next/navigation";
 
 export async function generateMetadata({ params }) {
@@ -64,7 +65,7 @@ export default async function ProductPage({ params }) {
               Technical Specifications
             </h2>
 
-            <div className="grid grid-cols-1 border border-gray-200 md:grid-cols-2">
+            <div className={`grid grid-cols-1 ${cardRadius} overflow-hidden border border-gray-200 md:grid-cols-2`}>
               {specs.map((spec, index) => (
                 <div
                   key={spec.label}

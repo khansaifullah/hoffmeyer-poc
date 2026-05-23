@@ -16,11 +16,14 @@ This document describes the current visual design of the Hoffmeyer POC storefron
 
 ### 2. Reuse before reinventing
 - Use existing shared components (`Breadcrumbs`, `SectionHeading`, `StockBadge`, `BrandLogo`, etc.).
+- Use shared presets from `lib/ui-presets.js` and `lib/motion-presets.js` instead of hardcoding radius or animation values.
 - Extend a component with a prop rather than duplicating markup.
 - Match surrounding code’s patterns (Tailwind arbitrary values, hex colors, file structure).
 
 ### 3. Do not “fix” known inconsistencies
 Several patterns intentionally differ between pages (see [Known Intentional Differences](#known-intentional-differences)). Do not harmonize them unless the user asks.
+
+**Exception:** border radius is unified site-wide via `ui-presets.js`. Do not revert cards, buttons, or inputs to sharp corners.
 
 ### 4. shadcn/ui scope
 shadcn is used **only where already adopted**. Do not migrate native controls to shadcn unless asked.
@@ -28,7 +31,7 @@ shadcn is used **only where already adopted**. Do not migrate native controls to
 Currently on shadcn:
 - `Button` — product detail CTA, products dropdown trigger
 - `DropdownMenu` — header Products menu
-- `Checkbox` — product listing filters
+- `Checkbox` — product listing filters and compare checkboxes
 - `Select` — product listing sort control
 
 Everything else uses custom markup and Tailwind classes.
@@ -47,11 +50,35 @@ All floating UI must avoid hiding the page scrollbar:
 | Framework | Next.js 16 (App Router) |
 | Styling | Tailwind CSS v4 |
 | Font | Poppins (Google Fonts, weights 300–800) |
+| Animation | Motion (`motion/react`) on landing page sections |
 | Component library | shadcn/ui (Base UI / “base-nova” style) |
 | Icons | Inline SVG + Lucide (shadcn components only) |
 
 Global styles: `app/globals.css`  
 Root layout: `app/layout.jsx`
+
+Shared presets:
+- `lib/ui-presets.js` — border radius tokens
+- `lib/motion-presets.js` — scroll-reveal animation presets
+
+---
+
+## Border Radius (`lib/ui-presets.js`)
+
+Use these exports instead of inventing new radius classes.
+
+| Export | Classes | Usage |
+|--------|---------|-------|
+| `squareCardRadius` | `rounded-2xl md:rounded-xl` | Home category cards, home featured product cards |
+| `cardRadius` | `rounded-xl` | Brand cards, listing cards, PDP gallery, static page cards |
+| `buttonRadius` | `rounded-lg md:rounded-md` | Buttons, view toggles, qty steppers |
+| `inputRadius` | `rounded-lg md:rounded-md` | Text inputs, search fields, sort triggers |
+| `pillRadius` | `rounded-lg` | Subcategory pills |
+| `menuRadius` | `rounded-lg` | Search results dropdown, filter/sort menus |
+
+**Keep `rounded-full` for:** avatars, stock badge dots, PDP “In Stock” pill, trust icon circles.
+
+**Intentionally sharp:** Products dropdown trigger text button (`rounded-none`) — it reads as nav text, not a button.
 
 ---
 
@@ -62,10 +89,10 @@ Use these **exact hex values**. Do not substitute Tailwind `blue-*` scales unles
 | Token | Hex | Usage |
 |-------|-----|--------|
 | Primary blue | `#16568D` | Header nav bar, section underlines, primary buttons, links, focus rings, brand accents |
-| Primary blue hover | `#124570` | Hover state for `#16568D` buttons |
+| Primary blue hover | `#124570` | Hover state for filled `#16568D` buttons |
 | Action blue | `#004b87` | Product titles, list CTAs, login, search accents, mobile nav hover |
 | Action blue hover | `#003a63` | Hover for `#004b87` buttons |
-| Hero blue | `#40A8F3` | **Inner-page heroes only** (category, brand, listing) |
+| Hero blue | `#40A8F3` | Inner-page heroes (category, brand, listing, compare, static pages) |
 | Landing CTA blue | `#0062B6` | Landing hero “Shop Products” button text |
 | Dark bar | `#333333` | Top promo banner, newsletter footer |
 | Section gray | `#f2f2f2` | Brand grids, info sections |
@@ -134,8 +161,26 @@ Use these **exact hex values**. Do not substitute Tailwind `blue-*` scales unles
 | `bg-white` | Featured products (category), subcategories, product listing, PDP |
 | `bg-[#f2f2f2]` | Shop by Brand, Featured Brands, InfoSections |
 | `bg-[#fcfcfc]` | Home Shop by Category |
-| `bg-[#40A8F3]` | CategoryHero, BrandHero, ListingHero |
+| `bg-[#40A8F3]` | CategoryHero, BrandHero, ListingHero, compare hero, StaticPageShell hero |
 | Image banner | Home Hero **only** |
+
+---
+
+## Motion (`lib/motion-presets.js`)
+
+Landing page sections use Motion scroll-reveal animations:
+- `ShopByCategory`, `FeaturedProducts`, `FeaturedBrands`, `InfoSections`, `Newsletter`
+- `Hero.jsx` — load animation on banner and CTA
+
+Presets:
+- `fadeUpVariant` / `fadeUpTransition` — fade up on scroll into view
+- `staggerContainerVariant` — stagger children in grids
+- `cardHoverMotion` — subtle lift on card hover
+- `inViewViewport` — `once: true`, partial visibility threshold
+
+**Hero hydration rule:** do not branch `initial` animation props on `useReducedMotion()`. Use fixed `initial` values; gate reduced motion only for transitions and hover effects after mount.
+
+Do not add Motion to inner catalog pages unless asked.
 
 ---
 
@@ -147,9 +192,27 @@ Three stacked bands on desktop:
 2. **Middle bar** — white, logo + tagline + utility links + phone `(800) 350-2358` in `text-[28px] font-extrabold text-[#16568D]`
 3. **Nav bar** — `bg-[#16568D]`, Products dropdown + search + Quick Order + cart
 
+### Scroll behavior
+- Header is **fixed** at the top with a height spacer to prevent layout jump.
+- **Hides** when scrolling down (after ~80px).
+- **Reappears** when scrolling up.
+- Always visible near the top of the page and when the mobile menu is open.
+- Uses `translate3d` for hide/show; blue bar overlaps white section by 1px to avoid subpixel seam lines.
+
+### Navigation links (desktop + mobile)
+| Label | Route |
+|-------|-------|
+| Locations | `/locations` |
+| Resources | `/resources` |
+| About Us | `/about` |
+| Login | `/login` |
+| Register | `/register` |
+
 Mobile: hamburger sidebar (`w-[80%] max-w-sm`), collapsible categories, Login/Register CTAs at bottom.
 
 **Products dropdown:** `ProductsDropdown.jsx` — shadcn `DropdownMenu` with `modal={false}`.
+
+**Global search:** `GlobalSearchBar.jsx` — desktop (white input in blue bar) and mobile (`bg-[#E7E7E7]`) variants. Results dropdown uses `menuRadius`.
 
 **Auth label:** “Login” (not “Sign In”), links to `/login`.
 
@@ -158,18 +221,23 @@ Mobile: hamburger sidebar (`w-[80%] max-w-sm`), collapsible categories, Login/Re
 ## Heroes
 
 ### Landing Hero (`Hero.jsx`) — DO NOT change to `#40A8F3`
-- Full-width **photographic banner** (`/images/banners/desktop-banner.png` / `mobile-banner.jpg`)
-- Height: `h-[350px] md:h-[400px]`
-- White text overlay, CTA button: white bg, `text-[#0062B6]`
-- This is the **only** hero that uses an image background
+- Full-width **photographic banner**
+  - Desktop: `/images/banners/desktop-ban.jpg`
+  - Mobile: `/images/banners/mobile-banner.jpg`
+- Height: `h-[350px]` mobile; desktop uses `md:aspect-[2560/900]` (not a fixed pixel height)
+- Mobile image: `object-cover object-bottom`
+- Desktop image: `object-cover object-center`
+- White text overlay, CTA button: white bg, `text-[#0062B6]`, `buttonRadius`
+- Load animation via Motion; this is the **only** hero that uses an image background
 
 ### Inner-page heroes — `#40A8F3` background, white text
 
 | Component | File | Notes |
 |-----------|------|-------|
 | CategoryHero | `CategoryHero.jsx` | Breadcrumbs + capitalized category name |
-| BrandHero | `BrandHero.jsx` | Breadcrumbs + uppercase brand name + logo panel on right (`border-white/30 bg-white`) |
-| ListingHero | `ListingHero.jsx` | Breadcrumbs + uppercase title with white underline accent + “Read more” link |
+| BrandHero | `BrandHero.jsx` | Breadcrumbs + uppercase brand name + logo panel on right (`cardRadius`, `border-white/30 bg-white`) |
+| ListingHero | `ListingHero.jsx` | Breadcrumbs + uppercase title with white underline accent + functional “Read more” / “Read less” expand |
+| StaticPageShell | `StaticPageShell.jsx` | Blue hero band for About, Locations, Resources, Register |
 
 Padding: Category/Brand `py-10 md:py-14`; Listing `py-8 md:py-10`.
 
@@ -202,31 +270,33 @@ Renders: `{accent}` with blue underline + `{rest}` appended. Used on **inner cat
 
 ## Cards & Grids
 
+Apply radius via `ui-presets.js` exports (see [Border Radius](#border-radius-libui-presetsjs)).
+
 ### Home category cards (`ShopByCategory.jsx`)
-- `aspect-square`, `rounded-2xl md:rounded-xl`, `border-gray-200`
+- `aspect-square`, `squareCardRadius`, `border-gray-200`
 - Hover: `border-[#16568D] shadow-lg`, image `scale-105`
 - 2-col mobile → 6-col desktop
+- “View All Categories” uses outline button style (see [Buttons](#buttons))
 
 ### Home featured product cards (`FeaturedProducts.jsx`)
-- Same card shape as category cards (square, rounded)
+- Same card shape as category cards (`squareCardRadius`)
 - Image + product name only (no price, no stock badge)
 
 ### Category featured product cards (`CategoryFeaturedProducts.jsx`)
-- `border border-gray-200 p-4`, 5-column grid on large screens
+- `cardRadius`, `border border-gray-200 p-4`, 5-column grid on large screens
 - Image well: `aspect-square bg-[#fafafa]`
 - Brand + MFR number, description, item #, `StockBadge`, price
 - Hover: `border-[#16568D]`
-- 5th product (index 4) shows “Factory Order” badge (demo data)
 
 ### Brand logo cards (`ShopByBrand.jsx`, `FeaturedBrands.jsx`)
-- `h-24 md:h-28`, white bg, `border-gray-200`
+- `cardRadius`, `h-24 md:h-28`, white bg, `border-gray-200`
 - Hover: `border-[#16568D]`
 - Grid: 2-col → 4-col
 - Uses `BrandLogo` component
 
 ### Subcategory pills (`CategorySubcategories.jsx`)
-- Horizontal pills: `h-14 md:h-16`, thumbnail left + label right
-- `rounded-lg border-gray-200`, hover `border-[#16568D]`
+- Horizontal pills: `pillRadius`, `h-14 md:h-16`, thumbnail left + label right
+- `border-gray-200`, hover `border-[#16568D]`
 
 ### Product listing — list view (`CategoryProductListing.jsx`)
 - Full-width rows, image `h-28 w-28`, title in `#004b87`
@@ -238,6 +308,19 @@ Renders: `{accent}` with blue underline + `{rest}` appended. Used on **inner cat
 - Uses `StockBadge` (same as featured cards)
 
 **CTA text on listing:** still “Add to Cart” (not “Request a Quote”). PDP uses “Request a Quote”.
+
+---
+
+## Compare Flow
+
+| Piece | Path | Notes |
+|-------|------|-------|
+| Storage helper | `lib/product-compare.js` | sessionStorage, max 4 products |
+| Compare bar | `app/_components/CompareBar.jsx` | Sticky bottom bar on listing pages when items selected |
+| Compare page | `app/compare/page.jsx` | Side-by-side table; reads `?slugs=` query param |
+| Listing integration | `CategoryProductListing.jsx` | Compare checkboxes in list and grid views |
+
+Compare bar buttons use `buttonRadius`.
 
 ---
 
@@ -256,22 +339,24 @@ Shared component for **featured cards and listing views**.
 
 ## Buttons
 
-Multiple button styles coexist by design:
+Use `buttonRadius` from `ui-presets.js` unless noted.
 
 | Style | Classes | Where |
 |-------|---------|-------|
-| Primary filled | `bg-[#16568D] hover:bg-[#124570] text-white font-bold` | Newsletter, mobile register, View All Categories (mobile) |
-| Primary action | `bg-[#004b87] hover:bg-[#003a63] text-white font-bold` | Listing Add to Cart, login submit, search button |
-| Outline | `border border-[#16568D] bg-white text-[#16568D] hover:bg-[#16568D] hover:text-white` | View All Brands |
-| Landing hero CTA | `bg-white text-[#0062B6] rounded-lg md:rounded-md font-semibold` | Hero.jsx only |
-| shadcn Button | `bg-[#16568D] hover:bg-[#124570] h-14 w-full` | ProductDetail “Request a Quote” |
+| Primary filled | `bg-[#16568D] hover:bg-[#124570] text-white font-bold` | Newsletter subscribe, mobile register, compare actions |
+| Primary action | `bg-[#004b87] hover:bg-[#003a63] text-white font-bold` | Listing Add to Cart, login submit |
+| Outline | `border border-[#16568D] bg-white text-[#16568D] hover:bg-[#16568D] hover:text-white` | View All Categories, View All Brands, static page secondary CTAs |
+| Landing hero CTA | `bg-white text-[#0062B6] font-semibold` + `buttonRadius` | Hero.jsx only |
+| shadcn Button | `bg-[#16568D] hover:bg-[#124570] h-14 w-full` + `buttonRadius` | ProductDetail “Request a Quote” |
 | View toggle | Active: `bg-[#004b87] text-white`; inactive: `bg-white text-[#333]` | List/Grid toggle |
 
-Do not consolidate button styles globally.
+Do not consolidate button styles globally beyond the shared radius preset.
 
 ---
 
 ## Forms & Inputs
+
+Use `inputRadius` from `ui-presets.js` for native inputs.
 
 ### Native inputs (most of site)
 - Height: `h-10` or `h-11`
@@ -279,14 +364,20 @@ Do not consolidate button styles globally.
 - Focus: `focus:border-[#004b87]` or `focus:border-[#16568D]`
 - Text: `text-[14px]`–`text-[16px]`
 
-### Header search
-- Desktop: white input inside blue bar, `rounded-lg`
-- Mobile: `bg-[#E7E7E7] rounded-xl`
+### Header search (`GlobalSearchBar.jsx`)
+- Desktop: white input inside blue bar, `inputRadius`
+- Mobile: `bg-[#E7E7E7]`, `inputRadius`
+- Results dropdown: `menuRadius`
 
 ### Login (`app/(auth)/login/page.jsx`)
-- Card: `border-gray-200 p-8 shadow-sm`
+- Card: `cardRadius`, `border-gray-200 p-8 shadow-sm`
 - Labels: uppercase tracking-wide
 - Password show/hide toggle (eye icon)
+
+### Register (`app/register/page.jsx`)
+- Uses `StaticPageShell`
+- Client-side form with success state only (no backend yet)
+- Inputs and submit button use `inputRadius` / `buttonRadius`
 
 ---
 
@@ -294,7 +385,7 @@ Do not consolidate button styles globally.
 
 When adding or styling shadcn components, match existing overrides:
 
-### Checkbox (filters)
+### Checkbox (filters + compare)
 ```jsx
 className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
 ```
@@ -302,8 +393,8 @@ className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:
 ### Select (sort)
 ```jsx
 <Select modal={false} ...>
-  <SelectTrigger className="h-10 min-w-[220px] rounded-none border-gray-300 ..." />
-  <SelectContent alignItemWithTrigger={false} className="rounded-sm border border-gray-200 bg-white shadow-md">
+  <SelectTrigger className={`h-10 min-w-[220px] border-gray-300 ... ${buttonRadius}`} />
+  <SelectContent alignItemWithTrigger={false} className={`${menuRadius} border border-gray-200 bg-white shadow-md`}>
     <SelectItem className="... focus:bg-[#16568D]/12 focus:text-[#16568D]" />
   </SelectContent>
 </Select>
@@ -311,7 +402,8 @@ className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:
 
 ### DropdownMenu (products)
 - `modal={false}`
-- Content: `rounded-sm border border-[#d9e0e8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]`
+- Trigger: ghost text style, `rounded-none` (nav link appearance)
+- Content: `rounded-lg border border-[#d9e0e8] shadow-[0_8px_20px_rgba(0,0,0,0.12)]`
 - Items: `focus:bg-[#16568D]/12 focus:text-[#16568D]`
 
 ---
@@ -319,7 +411,8 @@ className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:
 ## Newsletter (`app/_components/Newsletter.jsx`)
 
 - `bg-[#333333]` with `border-b-8 border-[#16568D]`
-- White italic heading, email input + Subscribe button
+- White italic heading, email input (`inputRadius`) + Subscribe button (`buttonRadius`)
+- Motion scroll-reveal animation
 - Present at bottom of **every storefront page**
 
 ---
@@ -328,8 +421,10 @@ className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:
 
 ### Home (`app/page.jsx`)
 ```
-Header → Hero (image) → ShopByCategory → FeaturedProducts → FeaturedBrands → InfoSections → Newsletter
+Header → Hero (image) → ShopByCategory → FeaturedBrands → FeaturedProducts → InfoSections → Newsletter
 ```
+
+Homepage sections are **static** (not wired to the API). Do not connect homepage grids to the catalog API unless explicitly asked.
 
 ### Category (`app/category/[slug]/page.jsx`)
 ```
@@ -343,7 +438,7 @@ Header → BrandHero → CategorySubcategories → CategoryFeaturedProducts → 
 
 ### Subcategory listing (`app/category/[slug]/[subSlug]/page.jsx`)
 ```
-Header → ListingHero → ProductListingSection → Newsletter
+Header → ListingHero → ProductListingSection (+ CompareBar) → Newsletter
 ```
 
 ### Product detail (`app/product/[slug]/page.jsx`)
@@ -351,17 +446,27 @@ Header → ListingHero → ProductListingSection → Newsletter
 Header → Breadcrumbs (light variant) → ProductDetail → Technical Specs table → Newsletter
 ```
 
+### Compare (`app/compare/page.jsx`)
+```
+Header → blue hero → comparison table → Newsletter
+```
+
+### Static pages (About, Locations, Resources, Register)
+```
+Header → StaticPageShell (blue hero + content) → Newsletter
+```
+
 ---
 
 ## Product Detail (`ProductDetail.jsx`)
 
 - Two-column grid on large screens
-- Gallery: main image + 4 thumbnail buttons
+- Gallery: main image + 4 thumbnail buttons (`cardRadius`)
 - Active thumbnail: `border-[#16568D] ring-1 ring-[#16568D]`
-- Size selector pills: selected = filled `#16568D`
-- Qty stepper: bordered box with − / + buttons
+- Size selector pills: selected = filled `#16568D`, `buttonRadius`
+- Qty stepper: bordered box with − / + buttons, `inputRadius`
 - Primary CTA: shadcn `Button`, full width mobile `h-14`
-- Trust badges: shield + truck icons in `bg-[#16568D]/10` circles
+- Trust badges: shield + truck icons in `bg-[#16568D]/10` circles (`rounded-full`)
 
 ---
 
@@ -386,6 +491,8 @@ Do **not** “fix” these unless explicitly requested:
 | Hero backgrounds | Landing = photo; all other pages = `#40A8F3` |
 | Button implementations | Mix of native `<button>`, `<Link>`, and shadcn `Button` |
 | Featured products home vs category | Home = image + name only; category = full commerce card with price/stock |
+| Homepage data | Static hardcoded content; catalog pages use API |
+| Motion | Landing page only; inner catalog pages are static on scroll |
 
 ---
 
@@ -395,10 +502,12 @@ Do **not** “fix” these unless explicitly requested:
 |-----------|------|
 | Header | `app/_components/Header.jsx` |
 | ProductsDropdown | `app/_components/ProductsDropdown.jsx` |
+| GlobalSearchBar | `app/_components/GlobalSearchBar.jsx` |
 | Hero (landing) | `app/_components/Hero.jsx` |
 | CategoryHero | `app/_components/CategoryHero.jsx` |
 | BrandHero | `app/_components/BrandHero.jsx` |
 | ListingHero | `app/_components/ListingHero.jsx` |
+| StaticPageShell | `app/_components/StaticPageShell.jsx` |
 | Breadcrumbs | `app/_components/Breadcrumbs.jsx` |
 | SectionHeading | `app/_components/SectionHeading.jsx` |
 | ShopByCategory | `app/_components/ShopByCategory.jsx` |
@@ -410,10 +519,14 @@ Do **not** “fix” these unless explicitly requested:
 | CategoryProductListing | `app/_components/CategoryProductListing.jsx` |
 | ProductListingSection | `app/_components/ProductListingSection.jsx` |
 | ProductDetail | `app/_components/ProductDetail.jsx` |
+| CompareBar | `app/_components/CompareBar.jsx` |
 | StockBadge | `app/_components/StockBadge.jsx` |
 | BrandLogo | `app/_components/BrandLogo.jsx` |
 | Newsletter | `app/_components/Newsletter.jsx` |
 | InfoSections | `app/_components/InfoSections.jsx` |
+| UI presets | `lib/ui-presets.js` |
+| Motion presets | `lib/motion-presets.js` |
+| Compare storage | `lib/product-compare.js` |
 | shadcn ui | `components/ui/` |
 
 ---
@@ -423,8 +536,12 @@ Do **not** “fix” these unless explicitly requested:
 - [ ] Only touched files required by the task
 - [ ] Reused existing shared components where applicable
 - [ ] Used exact hex colors from this doc
+- [ ] Used `ui-presets.js` for border radius on new cards, buttons, inputs, and menus
 - [ ] Did not change landing Hero to solid blue
-- [ ] Did not unify heading/button/card styles across pages
+- [ ] Did not change homepage section order unless asked
+- [ ] Did not wire homepage to the API unless asked
+- [ ] Did not unify heading/button/card styles across pages (except shared radius preset)
 - [ ] Floating UI uses `modal={false}` (+ `alignItemWithTrigger={false}` for Select)
 - [ ] Breadcrumbs use `/` separator and `Breadcrumbs` component
 - [ ] Newsletter remains at page bottom unless task says otherwise
+- [ ] Hero Motion animations use fixed `initial` props (no hydration mismatch)

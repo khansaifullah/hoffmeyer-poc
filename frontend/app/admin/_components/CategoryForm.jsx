@@ -1,14 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   categoryToPayload,
   createCategory,
   fetchAdminCategories,
   updateCategory,
 } from "@/lib/api";
+import { AdminFormSkeleton } from "./AdminSkeletons";
+import {
+  AdminAlert,
+  AdminField,
+  AdminFormActions,
+  AdminInput,
+  AdminLinkButton,
+  AdminPrimaryButton,
+  AdminSelect,
+  AdminTextarea,
+  adminToastError,
+  adminToastSuccess,
+} from "./AdminUi";
 
 const defaultForm = {
   parent_id: "",
@@ -40,13 +53,15 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
   const router = useRouter();
   const [form, setForm] = useState(categoryToForm(initialCategory));
   const [parentOptions, setParentOptions] = useState([]);
+  const [optionsLoading, setOptionsLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     fetchAdminCategories({ top_level: true })
       .then(setParentOptions)
-      .catch(() => setParentOptions([]));
+      .catch(() => setParentOptions([]))
+      .finally(() => setOptionsLoading(false));
   }, []);
 
   function updateField(field, value) {
@@ -63,131 +78,125 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
 
       if (categoryId) {
         await updateCategory(categoryId, payload);
+        adminToastSuccess("Category updated.", `"${form.name}" was saved successfully.`);
       } else {
         await createCategory(payload);
+        adminToastSuccess("Category created.", `"${form.name}" was added to the catalog.`);
       }
 
       router.push("/admin/categories");
       router.refresh();
     } catch (err) {
-      setError(err.message || "Failed to save category");
+      const message = err.message || "Failed to save category";
+      setError(message);
+      adminToastError(categoryId ? "Could not update category." : "Could not create category.", message);
     } finally {
       setSaving(false);
     }
   }
 
+  if (optionsLoading) {
+    return <AdminFormSkeleton fields={6} />;
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && (
-        <p className="rounded border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-700">
-          {error}
-        </p>
-      )}
+      {error ? <AdminAlert>{error}</AdminAlert> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-[14px] font-semibold text-[#333]">
-          Name
-          <input
+        <AdminField label="Name" htmlFor="category-name">
+          <AdminInput
+            id="category-name"
             type="text"
             required
             value={form.name}
             onChange={(event) => updateField("name", event.target.value)}
-            className="mt-1 h-11 w-full border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
           />
-        </label>
+        </AdminField>
 
-        <label className="block text-[14px] font-semibold text-[#333]">
-          Slug
-          <input
+        <AdminField label="Slug" htmlFor="category-slug">
+          <AdminInput
+            id="category-slug"
             type="text"
             value={form.slug}
             onChange={(event) => updateField("slug", event.target.value)}
             placeholder="Auto-generated if blank"
-            className="mt-1 h-11 w-full border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
           />
-        </label>
+        </AdminField>
       </div>
 
-      <label className="block text-[14px] font-semibold text-[#333]">
-        Parent Category
-        <select
+      <AdminField label="Parent Category" htmlFor="category-parent">
+        <AdminSelect
+          id="category-parent"
           value={form.parent_id}
-          onChange={(event) => updateField("parent_id", event.target.value)}
-          className="mt-1 h-11 w-full border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
-        >
-          <option value="">Top-level category</option>
-          {parentOptions.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </label>
+          onValueChange={(value) => updateField("parent_id", value)}
+          placeholder="Top-level category"
+          options={[
+            { value: "", label: "Top-level category" },
+            ...parentOptions.map((category) => ({
+              value: String(category.id),
+              label: category.name,
+            })),
+          ]}
+        />
+      </AdminField>
 
-      <label className="block text-[14px] font-semibold text-[#333]">
-        Image URL
-        <input
+      <AdminField label="Image URL" htmlFor="category-image">
+        <AdminInput
+          id="category-image"
           type="text"
           value={form.image}
           onChange={(event) => updateField("image", event.target.value)}
-          className="mt-1 h-11 w-full border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
         />
-      </label>
+      </AdminField>
 
-      <label className="block text-[14px] font-semibold text-[#333]">
-        Description
-        <textarea
+      <AdminField label="Description" htmlFor="category-description">
+        <AdminTextarea
+          id="category-description"
           rows={3}
           value={form.description}
           onChange={(event) => updateField("description", event.target.value)}
-          className="mt-1 w-full border border-gray-300 px-3 py-2 text-[15px] outline-none focus:border-[#004b87]"
         />
-      </label>
+      </AdminField>
 
-      <label className="block text-[14px] font-semibold text-[#333]">
-        Hero Description
-        <textarea
+      <AdminField label="Hero Description" htmlFor="category-hero-description">
+        <AdminTextarea
+          id="category-hero-description"
           rows={3}
           value={form.hero_description}
           onChange={(event) => updateField("hero_description", event.target.value)}
-          className="mt-1 w-full border border-gray-300 px-3 py-2 text-[15px] outline-none focus:border-[#004b87]"
         />
-      </label>
+      </AdminField>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <label className="block text-[14px] font-semibold text-[#333]">
-          Sort Order
-          <input
+        <AdminField label="Sort Order" htmlFor="category-sort-order">
+          <AdminInput
+            id="category-sort-order"
             type="number"
             min="0"
             value={form.sort_order}
             onChange={(event) => updateField("sort_order", Number(event.target.value))}
-            className="mt-1 h-11 w-full border border-gray-300 px-3 text-[15px] outline-none focus:border-[#004b87]"
           />
-        </label>
+        </AdminField>
 
-        <label className="flex items-center gap-3 pt-7 text-[14px] font-semibold text-[#333]">
-          <input
-            type="checkbox"
+        <label className="flex items-center gap-3 pt-8 text-sm font-medium text-[#333]">
+          <Checkbox
             checked={form.is_active}
-            onChange={(event) => updateField("is_active", event.target.checked)}
+            onCheckedChange={(checked) => updateField("is_active", Boolean(checked))}
+            className="data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
           />
           Active
         </label>
       </div>
 
-      <div className="flex items-center gap-4">
-        <button
-          type="submit"
-          disabled={saving}
-          className="h-11 bg-[#16568D] px-6 text-[14px] font-bold text-white hover:bg-[#124570] disabled:opacity-50"
-        >
+      <AdminFormActions>
+        <AdminPrimaryButton type="submit" disabled={saving}>
           {saving ? "Saving..." : categoryId ? "Update Category" : "Create Category"}
-        </button>
-        <Link href="/admin/categories" className="text-[14px] font-semibold text-[#16568D] hover:underline">
+        </AdminPrimaryButton>
+        <AdminLinkButton href="/admin/categories" variant="ghost">
           Cancel
-        </Link>
-      </div>
+        </AdminLinkButton>
+      </AdminFormActions>
     </form>
   );
 }

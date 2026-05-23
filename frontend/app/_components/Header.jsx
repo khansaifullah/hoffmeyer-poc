@@ -1,20 +1,80 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { fetchCategories } from "@/lib/api";
 import ProductsDropdown from "./ProductsDropdown";
 import GlobalSearchBar from "./GlobalSearchBar";
+import { buttonRadius } from "@/lib/ui-presets";
+
+const SCROLL_OFFSET = 80;
+const SCROLL_DELTA = 10;
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [headerHeight, setHeaderHeight] = useState(0);
+  const headerRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
     fetchCategories({ top_level: true, active: true })
       .then(setCategories)
       .catch(() => setCategories([]));
   }, []);
+
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight);
+      }
+    };
+
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" && headerRef.current
+        ? new ResizeObserver(updateHeaderHeight)
+        : null;
+
+    if (resizeObserver && headerRef.current) {
+      resizeObserver.observe(headerRef.current);
+    }
+
+    return () => {
+      window.removeEventListener("resize", updateHeaderHeight);
+      resizeObserver?.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (isMenuOpen) {
+        setIsHeaderVisible(true);
+        lastScrollY.current = window.scrollY;
+        return;
+      }
+
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY <= SCROLL_OFFSET) {
+        setIsHeaderVisible(true);
+      } else if (currentScrollY > lastScrollY.current + SCROLL_DELTA) {
+        setIsHeaderVisible(false);
+      } else if (currentScrollY < lastScrollY.current - SCROLL_DELTA) {
+        setIsHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    lastScrollY.current = window.scrollY;
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isMenuOpen]);
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -29,7 +89,13 @@ const Header = () => {
 
   return (
     <>
-      <header className="w-full flex flex-col font-sans select-none relative z-40">
+      <div style={{ height: headerHeight }} aria-hidden="true" className="shrink-0" />
+      <header
+        ref={headerRef}
+        className={`fixed top-0 left-0 right-0 z-40 w-full flex flex-col font-sans select-none bg-white transition-transform duration-300 ease-in-out ${
+          isHeaderVisible ? "translate-y-0" : "-translate-y-full"
+        }`}
+      >
         {/* Top Banner */}
         <div className="bg-[#333333] w-full">
           <div className="max-w-7xl mx-auto text-white py-1 text-center text-[12px]">
@@ -67,15 +133,15 @@ const Header = () => {
             {/* Desktop Links & Phone */}
             <div className="hidden md:flex items-center gap-10">
               <nav className="flex items-center gap-8 text-[13px] font-semibold text-[#333]">
-                <a href="#" className="hover:text-[#004b87] transition-colors">Locations</a>
-                <a href="#" className="hover:text-[#004b87] transition-colors">Resources</a>
-                <a href="#" className="hover:text-[#004b87] transition-colors">About Us</a>
+                <Link href="/locations" className="hover:text-[#004b87] transition-colors">Locations</Link>
+                <Link href="/resources" className="hover:text-[#004b87] transition-colors">Resources</Link>
+                <Link href="/about" className="hover:text-[#004b87] transition-colors">About Us</Link>
                 <span className="flex items-center gap-2">
                   <Link href="/login" className="hover:text-[#004b87] transition-colors">
                     Login
                   </Link>
                   <span className="text-gray-400">|</span>
-                  <a href="#" className="hover:text-[#004b87] transition-colors">Register</a>
+                  <Link href="/register" className="hover:text-[#004b87] transition-colors">Register</Link>
                 </span>
               </nav>
               <div className="text-[28px] font-extrabold text-[#16568D] tracking-tight whitespace-nowrap">
@@ -170,9 +236,9 @@ const Header = () => {
             </div>
 
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Brands</a>
-            <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Locations</a>
-            <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Resources</a>
-            <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">About Us</a>
+            <Link href="/locations" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>Locations</Link>
+            <Link href="/resources" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>Resources</Link>
+            <Link href="/about" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>About Us</Link>
             <Link
               href="/login"
               className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2"
@@ -189,13 +255,17 @@ const Header = () => {
             <Link
               href="/login"
               onClick={() => setIsMenuOpen(false)}
-              className="w-full bg-white border-2 border-[#16568D] text-[#16568D] font-bold py-3 rounded-lg hover:bg-gray-50 transition-colors text-center"
+              className={`w-full border border-[#16568D] bg-white text-[#16568D] font-bold py-3 transition-colors hover:bg-[#16568D] hover:text-white text-center ${buttonRadius}`}
             >
               Login
             </Link>
-            <button className="w-full bg-[#16568D] text-white font-bold py-3 rounded-lg hover:bg-[#124570] transition-colors">
+            <Link
+              href="/register"
+              onClick={() => setIsMenuOpen(false)}
+              className={`w-full bg-[#16568D] text-white font-bold py-3 hover:bg-[#124570] transition-colors text-center ${buttonRadius}`}
+            >
               Register
-            </button>
+            </Link>
           </div>
           <div className="mt-6 text-center text-[18px] font-extrabold text-[#16568D] tracking-tight">
             (800) 350-2358

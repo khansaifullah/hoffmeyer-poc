@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getToken, login } from "@/lib/auth";
+import { buttonRadius, cardRadius, inputRadius } from "@/lib/ui-presets";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,11 +36,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-md border border-gray-200 bg-white p-8 shadow-sm">
+    <div className={`w-full max-w-md ${cardRadius} border border-gray-200 bg-white p-8 shadow-sm`}>
       <div className="mb-8 text-center">
         <img src="/images/brand/logo.png" alt="Hoffmeyer" className="mx-auto h-10 object-contain" />
-        <h1 className="mt-4 text-[24px] font-bold text-[#004b87]">Admin Sign In</h1>
-        <p className="mt-2 text-[14px] text-gray-500">Sign in to manage catalog data</p>
+        <h1 className="mt-4 text-[24px] font-bold text-[#004b87]">Login</h1>
+        <p className="mt-2 text-[14px] text-gray-500">Sign in to your Hoffmeyer account</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -53,7 +54,7 @@ export default function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             required
-            className="h-11 w-full border border-gray-300 bg-white px-3 text-[15px] text-gray-900 outline-none focus:border-[#004b87]"
+            className={`h-11 w-full border border-gray-300 bg-white px-3 text-[15px] text-gray-900 outline-none focus:border-[#004b87] ${inputRadius}`}
           />
         </div>
 
@@ -68,7 +69,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               required
-              className="h-11 w-full border border-gray-300 bg-white px-3 pr-11 text-[15px] text-gray-900 outline-none focus:border-[#004b87]"
+              className={`h-11 w-full border border-gray-300 bg-white px-3 pr-11 text-[15px] text-gray-900 outline-none focus:border-[#004b87] ${inputRadius}`}
             />
             <button
               type="button"
@@ -102,9 +103,9 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="h-11 w-full bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] disabled:opacity-60"
+          className={`h-11 w-full bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] disabled:opacity-60 ${buttonRadius}`}
         >
-          {loading ? "Signing in..." : "Sign In"}
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
 
