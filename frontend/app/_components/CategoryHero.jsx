@@ -1,4 +1,5 @@
 import Breadcrumbs from "./Breadcrumbs";
+import { getCatalogHref } from "@/lib/catalog-urls";
 
 export default function CategoryHero({ category, description }) {
   const categoryName = category.name;
@@ -13,7 +14,7 @@ export default function CategoryHero({ category, description }) {
         <Breadcrumbs
           items={[
             { label: "Home", href: "/" },
-            { label: "Categories", href: "/#categories" },
+            { label: "Product Catalog", href: getCatalogHref() },
             { label: categoryName, className: "capitalize" },
           ]}
         />

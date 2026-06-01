@@ -12,6 +12,11 @@ class ProductResource extends JsonResource
         return [
             'id' => $this->id,
             'category_id' => $this->category_id,
+            'category_ids' => $this->whenLoaded(
+                'categories',
+                fn () => $this->categories->pluck('id')->values()->all(),
+                fn () => $this->category_id ? [$this->category_id] : []
+            ),
             'brand_id' => $this->brand_id,
             'name' => $this->name,
             'slug' => $this->slug,
@@ -27,6 +32,7 @@ class ProductResource extends JsonResource
             'is_featured' => $this->is_featured,
             'sort_order' => $this->sort_order,
             'category' => new CategoryResource($this->whenLoaded('category')),
+            'categories' => CategoryResource::collection($this->whenLoaded('categories')),
             'brand' => new BrandResource($this->whenLoaded('brand')),
             'images' => $this->whenLoaded('images', fn () => $this->images->map(fn ($image) => [
                 'id' => $image->id,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { ChevronDownIcon } from "lucide-react";
+import { getCategoryHref } from "@/lib/catalog-urls";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -42,7 +43,7 @@ export default function ProductsDropdown({ categories = [] }) {
           {categories.map((category) => (
             <DropdownMenuItem
               key={category.id}
-              render={<Link href={`/category/${category.slug}`} />}
+              render={<Link href={getCategoryHref(category)} />}
               className="cursor-pointer px-3 py-2 text-[14px] font-medium text-[#333] focus:bg-[#16568D]/12 focus:text-[#16568D]"
             >
               {category.name.replace(/\n/g, " ")}

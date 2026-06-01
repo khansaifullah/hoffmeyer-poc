@@ -1,8 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { formatPrice, getProductSku } from "@/lib/product";
+import { getQuoteHref } from "@/lib/quote";
 import { buttonRadius, cardRadius, inputRadius } from "@/lib/ui-presets";
 
 const SIZE_OPTIONS = ['12"', '24"', '36"', '48"'];
@@ -118,12 +119,16 @@ export default function ProductDetail({ product }) {
             </button>
           </div>
 
-          <Button
-            type="button"
-            className={`h-14 w-full bg-[#16568D] px-6 text-[16px] font-bold hover:bg-[#124570] sm:h-12 ${buttonRadius}`}
+          <Link
+            href={getQuoteHref({
+              productSlug: product.slug,
+              productName: product.name,
+              quantity,
+            })}
+            className={`inline-flex h-14 w-full items-center justify-center bg-[#16568D] px-6 text-[16px] font-bold text-white hover:bg-[#124570] sm:h-12 ${buttonRadius}`}
           >
             Request a Quote
-          </Button>
+          </Link>
         </div>
 
         <div className="mt-8 flex flex-wrap gap-8 border-t border-gray-200 pt-6">

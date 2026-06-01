@@ -204,6 +204,10 @@ class ProductCsvImporter
             return "Category '{$data['category_slug']}' was not found.";
         }
 
+        if (! $category->isSubcategory()) {
+            return "category_slug must reference a subcategory (leaf category).";
+        }
+
         $brandId = null;
 
         if (! empty($data['brand_slug'])) {
@@ -255,13 +259,15 @@ class ProductCsvImporter
             }
 
             $existing->update($payload);
+            $existing->categories()->syncWithoutDetaching([$category->id]);
 
             return 'updated';
         }
 
         $payload['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
 
-        Product::query()->create($payload);
+        $product = Product::query()->create($payload);
+        $product->categories()->sync([$category->id]);
 
         return 'created';
     }

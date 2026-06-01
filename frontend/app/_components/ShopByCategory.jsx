@@ -3,14 +3,8 @@
 import Link from "next/link";
 import { motion } from "motion/react";
 import { categories as defaultCategories } from "@/lib/categories";
-import {
-  cardHoverMotion,
-  fadeUpTransition,
-  fadeUpVariant,
-  inViewViewport,
-  staggerContainerVariant,
-} from "@/lib/motion-presets";
-import { getSlug } from "@/lib/slug";
+import { getProductGroupHref } from "@/lib/catalog-urls";
+import { cardHoverMotion, fadeUpTransition, fadeUpVariant, inViewViewport, staggerContainerVariant } from "@/lib/motion-presets";
 import { buttonRadius, squareCardRadius } from "@/lib/ui-presets";
 
 export default function ShopByCategory({
@@ -41,13 +35,12 @@ export default function ShopByCategory({
           className="grid grid-cols-2 gap-4 md:grid-cols-6 md:px-14"
         >
           {categories.map((cat, index) => {
-            const slug = getSlug(cat.name);
-            const isActive = currentSlug === slug;
+            const isActive = currentSlug === cat.groupSlug;
 
             return (
               <motion.div key={index} variants={fadeUpVariant} whileHover={cardHoverMotion}>
                 <Link
-                  href={`/category/${slug}`}
+                  href={getProductGroupHref(cat.groupSlug)}
                   className={`group flex aspect-square cursor-pointer flex-col items-center justify-between overflow-hidden ${squareCardRadius} border p-4 transition-all duration-300 ${
                     isActive
                       ? "border-[#16568D] bg-[#16568D]/5 shadow-lg"

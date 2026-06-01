@@ -25,8 +25,12 @@ class CategoryController extends Controller
             $query->where('parent_id', $request->integer('parent_id'));
         }
 
-        if ($request->boolean('top_level')) {
-            $query->whereNull('parent_id');
+        if ($request->boolean('product_groups') || $request->boolean('top_level')) {
+            $query->productGroups();
+        }
+
+        if ($request->filled('level')) {
+            $query->where('level', $request->string('level'));
         }
 
         return response()->json([
@@ -39,7 +43,9 @@ class CategoryController extends Controller
         $data = $request->validated();
         $data['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
         $data['is_active'] = $data['is_active'] ?? true;
+        $data['is_featured'] = $data['is_featured'] ?? false;
         $data['sort_order'] = $data['sort_order'] ?? 0;
+        $data['level'] = $data['level'] ?? Category::resolveLevel($data['parent_id'] ?? null);
 
         $category = Category::query()->create($data);
         $category->load('parent')->loadCount('products');
@@ -49,7 +55,7 @@ class CategoryController extends Controller
 
     public function show(Category $category): JsonResponse
     {
-        $category->load('parent')->loadCount('products');
+        $category->load(['parent.parent', 'children.children'])->loadCount('products');
 
         return response()->json(['data' => new CategoryResource($category)]);
     }
@@ -72,6 +78,10 @@ class CategoryController extends Controller
             return response()->json(['message' => 'A category cannot be its own parent.'], 422);
         }
 
+        if (array_key_exists('parent_id', $data) && ! array_key_exists('level', $data)) {
+            $data['level'] = Category::resolveLevel($data['parent_id']);
+        }
+
         $category->update($data);
         $category->load('parent')->loadCount('products');
 
@@ -81,7 +91,7 @@ class CategoryController extends Controller
     public function destroy(Category $category): JsonResponse
     {
         if ($category->children()->exists()) {
-            return response()->json(['message' => 'Cannot delete a category that has subcategories.'], 422);
+            return response()->json(['message' => 'Cannot delete a category that has child categories.'], 422);
         }
 
         if ($category->products()->exists()) {

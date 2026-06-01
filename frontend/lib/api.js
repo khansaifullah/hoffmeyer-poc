@@ -1,7 +1,27 @@
+import { getCatalogHref, getCategoryHref } from "@/lib/catalog-urls";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
 export function getApiUrl(path = "") {
   return `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+export function getBackendOrigin() {
+  return API_URL.replace(/\/api\/?$/, "");
+}
+
+export function resolveImageUrl(url) {
+  if (!url) return "";
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
+  }
+
+  if (url.startsWith("/storage/")) {
+    return `${getBackendOrigin()}${url}`;
+  }
+
+  return url;
 }
 
 export async function apiFetch(path, options = {}) {
@@ -20,6 +40,7 @@ export async function apiFetch(path, options = {}) {
 
   const response = await fetch(getApiUrl(path), {
     ...options,
+    cache: "no-store",
     headers,
   });
 
@@ -49,9 +70,18 @@ function buildQuery(params = {}) {
 export function mapApiProduct(product) {
   if (!product) return null;
 
+  const categoryIds =
+    product.category_ids ||
+    product.categories?.map((category) => category.id) ||
+    (product.category_id ? [product.category_id] : []);
+
+  const categories = product.categories?.map((category) => mapApiCategory(category)) || [];
+  const category = product.category ? mapApiCategory(product.category) : categories[0] || null;
+
   return {
     id: product.id,
     categoryId: product.category_id,
+    categoryIds,
     brandId: product.brand_id,
     name: product.name,
     slug: product.slug,
@@ -67,31 +97,73 @@ export function mapApiProduct(product) {
     factoryOrder: product.availability_status === "factory_order",
     isFeatured: product.is_featured,
     sortOrder: product.sort_order,
-    category: product.category ? mapApiCategory(product.category) : null,
-    categorySlug: product.category?.slug,
-    categoryName: product.category?.name,
+    category,
+    categories,
+    categorySlug: category?.slug,
+    categoryHref: getCategoryHref(category),
+    categoryName:
+      categories.length > 0
+        ? categories.map((category) => category.name).join(", ")
+        : product.category?.name,
     brand: product.brand ? mapApiBrand(product.brand) : null,
     images: product.images || [],
     specs: product.specs || [],
   };
 }
 
-export function mapApiCategory(category) {
+export function mapApiCategory(category, ancestors = []) {
   if (!category) return null;
 
-  return {
+  const ancestorChain = Array.isArray(ancestors) ? ancestors : [];
+  const breadcrumb = category.breadcrumb?.length
+    ? category.breadcrumb
+    : [
+        ...ancestorChain.map((node) => ({
+          id: node.id,
+          name: node.name,
+          slug: node.slug,
+          level: node.level,
+        })),
+        {
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          level: category.level,
+        },
+      ];
+
+  const catalogPath =
+    category.catalog_path || breadcrumb.map((node) => node.slug).filter(Boolean).join("/");
+
+  const mapped = {
     id: category.id,
     name: category.name,
     slug: category.slug,
+    level: category.level,
     image: category.image,
     description: category.description,
     heroDescription: category.hero_description,
     sortOrder: category.sort_order,
     isActive: category.is_active,
+    isFeatured: category.is_featured,
     parentId: category.parent_id,
+    catalogPath,
+    breadcrumb,
     productsCount: category.products_count,
-    children: category.children?.map(mapApiCategory) || [],
     products: category.products?.map(mapApiProduct) || [],
+  };
+
+  const node = {
+    id: mapped.id,
+    name: mapped.name,
+    slug: mapped.slug,
+    level: mapped.level,
+  };
+
+  return {
+    ...mapped,
+    href: category.href || (catalogPath ? `/category/${catalogPath}` : getCategoryHref(mapped)),
+    children: category.children?.map((child) => mapApiCategory(child, [...ancestorChain, node])) || [],
   };
 }
 
@@ -114,7 +186,7 @@ export function mapApiBrand(brand) {
 
 export async function fetchCategories(params = {}) {
   const result = await apiFetch(`/categories${buildQuery(params)}`);
-  return result.data.map(mapApiCategory);
+  return result.data.map((category) => mapApiCategory(category));
 }
 
 export async function fetchCategory(slug) {
@@ -205,7 +277,7 @@ export async function importProducts(file) {
 
 export async function fetchAdminCategories(params = {}) {
   const result = await apiFetch(`/admin/categories${buildQuery(params)}`);
-  return result.data.map(mapApiCategory);
+  return result.data.map((category) => mapApiCategory(category));
 }
 
 export async function fetchAdminCategory(id) {
@@ -276,6 +348,41 @@ export async function deleteBrand(id) {
   return apiFetch(`/admin/brands/${id}`, { method: "DELETE" });
 }
 
+export async function uploadAdminImage(file, folder = "products") {
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("folder", folder);
+
+  const headers = {
+    Accept: "application/json",
+  };
+
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("hoffmeyer_token");
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(getApiUrl("/admin/uploads/image"), {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    const message =
+      data.message ||
+      data.errors?.image?.[0] ||
+      "Image upload failed";
+    throw new Error(message);
+  }
+
+  return data.data.url;
+}
+
 export function brandToPayload(brand) {
   return {
     name: brand.name,
@@ -289,8 +396,13 @@ export function brandToPayload(brand) {
 }
 
 export function productToPayload(product) {
+  const categoryIds =
+    product.category_ids ||
+    product.categoryIds ||
+    (product.category_id ? [product.category_id] : []);
+
   return {
-    category_id: product.category_id,
+    category_ids: categoryIds.map(Number).filter(Boolean),
     brand_id: product.brand_id || null,
     name: product.name,
     slug: product.slug || "",

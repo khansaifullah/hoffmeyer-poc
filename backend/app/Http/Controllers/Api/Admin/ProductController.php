@@ -16,7 +16,7 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::query()
-            ->with(['category', 'brand'])
+            ->with(['category', 'categories', 'brand'])
             ->orderBy('sort_order')
             ->orderBy('name');
 
@@ -32,7 +32,8 @@ class ProductController extends Controller
         }
 
         if ($request->filled('category_id')) {
-            $query->where('category_id', $request->integer('category_id'));
+            $categoryId = $request->integer('category_id');
+            $query->whereHas('categories', fn ($builder) => $builder->where('categories.id', $categoryId));
         }
 
         $perPage = min(max((int) $request->input('per_page', 25), 1), 100);
@@ -43,27 +44,30 @@ class ProductController extends Controller
     public function store(StoreProductRequest $request): JsonResponse
     {
         $data = $request->validated();
+        $categoryIds = $this->normalizeCategoryIds($data['category_ids'] ?? []);
         $images = $data['images'] ?? [];
         $specs = $data['specs'] ?? [];
-        unset($data['images'], $data['specs']);
+        unset($data['images'], $data['specs'], $data['category_ids']);
 
         $data['slug'] = $this->resolveSlug($data['slug'] ?? null, $data['name']);
         $data['in_stock'] = $data['in_stock'] ?? true;
         $data['is_featured'] = $data['is_featured'] ?? false;
         $data['sort_order'] = $data['sort_order'] ?? 0;
+        $data['category_id'] = $categoryIds[0];
 
         $product = Product::query()->create($data);
+        $product->categories()->sync($categoryIds);
         $this->syncImages($product, $images, $data['image'] ?? null);
         $this->syncSpecs($product, $specs);
 
-        $product->load(['category', 'brand', 'images', 'specs']);
+        $product->load(['category', 'categories', 'brand', 'images', 'specs']);
 
         return response()->json(['data' => new ProductResource($product)], 201);
     }
 
     public function show(Product $product): JsonResponse
     {
-        $product->load(['category', 'brand', 'images', 'specs']);
+        $product->load(['category', 'categories', 'brand', 'images', 'specs']);
 
         return response()->json(['data' => new ProductResource($product)]);
     }
@@ -71,9 +75,12 @@ class ProductController extends Controller
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
         $data = $request->validated();
+        $categoryIds = array_key_exists('category_ids', $data)
+            ? $this->normalizeCategoryIds($data['category_ids'])
+            : null;
         $images = $data['images'] ?? null;
         $specs = $data['specs'] ?? null;
-        unset($data['images'], $data['specs']);
+        unset($data['images'], $data['specs'], $data['category_ids']);
 
         if (! empty($data['slug'])) {
             $data['slug'] = $this->resolveSlug($data['slug'], $data['name'] ?? $product->name, $product->id);
@@ -81,7 +88,15 @@ class ProductController extends Controller
             unset($data['slug']);
         }
 
+        if ($categoryIds !== null) {
+            $data['category_id'] = $categoryIds[0];
+        }
+
         $product->update($data);
+
+        if ($categoryIds !== null) {
+            $product->categories()->sync($categoryIds);
+        }
 
         if ($images !== null) {
             $this->syncImages($product, $images, $data['image'] ?? $product->image);
@@ -91,7 +106,7 @@ class ProductController extends Controller
             $this->syncSpecs($product, $specs);
         }
 
-        $product->load(['category', 'brand', 'images', 'specs']);
+        $product->load(['category', 'categories', 'brand', 'images', 'specs']);
 
         return response()->json(['data' => new ProductResource($product)]);
     }
@@ -101,6 +116,15 @@ class ProductController extends Controller
         $product->delete();
 
         return response()->json(['message' => 'Product deleted.']);
+    }
+
+    /**
+     * @param  list<int>  $categoryIds
+     * @return list<int>
+     */
+    private function normalizeCategoryIds(array $categoryIds): array
+    {
+        return array_values(array_unique(array_map('intval', $categoryIds)));
     }
 
     private function resolveSlug(?string $slug, string $name, ?int $ignoreId = null): string

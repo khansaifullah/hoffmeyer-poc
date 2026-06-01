@@ -2,20 +2,31 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Collection;
 
 class Category extends Model
 {
+    public const LEVEL_PRODUCT_GROUP = 'product_group';
+
+    public const LEVEL_CATEGORY = 'category';
+
+    public const LEVEL_SUBCATEGORY = 'subcategory';
+
     protected $fillable = [
         'parent_id',
+        'level',
         'name',
         'slug',
         'image',
         'description',
         'sort_order',
         'is_active',
+        'is_featured',
         'hero_description',
     ];
 
@@ -23,7 +34,17 @@ class Category extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_featured' => 'boolean',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Category $category) {
+            if (! $category->level) {
+                $category->level = self::resolveLevel($category->parent_id);
+            }
+        });
     }
 
     public function parent(): BelongsTo
@@ -36,8 +57,133 @@ class Category extends Model
         return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
     }
 
-    public function products(): HasMany
+    public function products(): BelongsToMany
     {
-        return $this->hasMany(Product::class);
+        return $this->belongsToMany(Product::class);
+    }
+
+    public function scopeProductGroups(Builder $query): Builder
+    {
+        return $query->where('level', self::LEVEL_PRODUCT_GROUP);
+    }
+
+    public function scopeCategories(Builder $query): Builder
+    {
+        return $query->where('level', self::LEVEL_CATEGORY);
+    }
+
+    public function scopeSubcategories(Builder $query): Builder
+    {
+        return $query->where('level', self::LEVEL_SUBCATEGORY);
+    }
+
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function isProductGroup(): bool
+    {
+        return $this->level === self::LEVEL_PRODUCT_GROUP;
+    }
+
+    public function isCategory(): bool
+    {
+        return $this->level === self::LEVEL_CATEGORY;
+    }
+
+    public function isSubcategory(): bool
+    {
+        return $this->level === self::LEVEL_SUBCATEGORY;
+    }
+
+    public static function resolveLevel(?int $parentId): string
+    {
+        if (! $parentId) {
+            return self::LEVEL_PRODUCT_GROUP;
+        }
+
+        $parent = self::query()->find($parentId);
+
+        if (! $parent) {
+            return self::LEVEL_PRODUCT_GROUP;
+        }
+
+        return match ($parent->level) {
+            self::LEVEL_PRODUCT_GROUP => self::LEVEL_CATEGORY,
+            self::LEVEL_CATEGORY => self::LEVEL_SUBCATEGORY,
+            default => self::LEVEL_SUBCATEGORY,
+        };
+    }
+
+    public function allowedChildLevel(): ?string
+    {
+        return match ($this->level) {
+            self::LEVEL_PRODUCT_GROUP => self::LEVEL_CATEGORY,
+            self::LEVEL_CATEGORY => self::LEVEL_SUBCATEGORY,
+            default => null,
+        };
+    }
+
+    public function ancestors(): Collection
+    {
+        $ancestors = collect();
+        $current = $this->parent;
+
+        while ($current) {
+            $ancestors->prepend($current);
+
+            if ($current->relationLoaded('parent')) {
+                $current = $current->parent;
+            } elseif ($current->parent_id) {
+                $current = $current->parent()->first();
+            } else {
+                $current = null;
+            }
+        }
+
+        return $ancestors;
+    }
+
+    public function breadcrumb(): Collection
+    {
+        return $this->ancestors()->push($this);
+    }
+
+    /**
+     * @return list<int>
+     */
+    public function subcategoryIds(): array
+    {
+        if ($this->isSubcategory()) {
+            return [$this->id];
+        }
+
+        $ids = [];
+
+        if ($this->isCategory()) {
+            foreach ($this->children as $child) {
+                $ids[] = $child->id;
+            }
+
+            return $ids;
+        }
+
+        $this->loadMissing('children.children');
+
+        foreach ($this->children as $category) {
+            foreach ($category->children as $subcategory) {
+                $ids[] = $subcategory->id;
+            }
+        }
+
+        return $ids;
+    }
+
+    public function catalogPath(): string
+    {
+        return $this->breadcrumb()
+            ->pluck('slug')
+            ->implode('/');
     }
 }

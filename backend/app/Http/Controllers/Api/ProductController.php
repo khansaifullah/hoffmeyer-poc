@@ -15,31 +15,46 @@ class ProductController extends Controller
     public function index(Request $request): JsonResponse
     {
         $query = Product::query()
-            ->with(['category.parent', 'brand', 'images', 'specs']);
+            ->with(['category.parent.parent', 'brand', 'images', 'specs']);
+
+        if ($request->filled('product_group')) {
+            $productGroup = Category::query()
+                ->where('slug', $request->string('product_group'))
+                ->where('level', Category::LEVEL_PRODUCT_GROUP)
+                ->first();
+
+            if ($productGroup) {
+                $subcategoryIds = $productGroup->subcategoryIds();
+
+                if ($subcategoryIds !== []) {
+                    $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $subcategoryIds));
+                }
+            }
+        }
 
         if ($request->filled('category')) {
-            $category = Category::query()->where('slug', $request->string('category'))->first();
+            $category = Category::query()
+                ->where('slug', $request->string('category'))
+                ->where('level', Category::LEVEL_CATEGORY)
+                ->first();
+
             if ($category) {
-                $query->where('category_id', $category->id);
+                $subcategoryIds = $category->subcategoryIds();
+
+                if ($subcategoryIds !== []) {
+                    $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $subcategoryIds));
+                }
             }
         }
 
         if ($request->filled('subcategory')) {
             $subcategory = Category::query()
                 ->where('slug', $request->string('subcategory'))
-                ->whereNotNull('parent_id')
+                ->where('level', Category::LEVEL_SUBCATEGORY)
                 ->first();
 
             if ($subcategory) {
-                $hasDirectProducts = Product::query()
-                    ->where('category_id', $subcategory->id)
-                    ->exists();
-
-                if ($hasDirectProducts) {
-                    $query->where('category_id', $subcategory->id);
-                } elseif ($subcategory->parent_id) {
-                    $query->where('category_id', $subcategory->parent_id);
-                }
+                $query->whereHas('categories', fn ($builder) => $builder->where('categories.id', $subcategory->id));
             }
         }
 
@@ -99,7 +114,7 @@ class ProductController extends Controller
     {
         $product = Product::query()
             ->where('slug', $slug)
-            ->with(['category.parent', 'brand', 'images', 'specs'])
+            ->with(['category.parent.parent', 'brand', 'images', 'specs'])
             ->firstOrFail();
 
         return response()->json(['data' => new ProductResource($product)]);

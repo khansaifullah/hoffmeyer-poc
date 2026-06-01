@@ -13,6 +13,7 @@ import {
   staggerContainerVariant,
 } from "@/lib/motion-presets";
 import { getSlug } from "@/lib/slug";
+import { getBrandInGroupHref, getProductGroupHref } from "@/lib/catalog-urls";
 import { cardRadius, buttonRadius } from "@/lib/ui-presets";
 
 export default function FeaturedBrands({
@@ -54,7 +55,7 @@ export default function FeaturedBrands({
           {featuredBrands.map((brand) => (
             <motion.div key={brand.name} variants={fadeUpVariant} whileHover={cardHoverMotion}>
               <Link
-                href={`/category/${categorySlug}/brand/${getSlug(brand.name)}`}
+                href={getBrandInGroupHref(categorySlug, getSlug(brand.name))}
                 className={`flex h-24 items-center justify-center ${cardRadius} border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28`}
               >
                 <BrandLogo brand={brand} size="lg" />
@@ -74,7 +75,7 @@ export default function FeaturedBrands({
           >
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
               <Link
-                href={`/category/${categorySlug}`}
+                href={getProductGroupHref(categorySlug)}
                 className={`border border-[#16568D] bg-white px-8 py-2.5 ${buttonRadius} text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white`}
               >
                 View All Brands

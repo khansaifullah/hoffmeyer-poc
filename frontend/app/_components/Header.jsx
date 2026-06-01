@@ -1,8 +1,10 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { fetchCategories } from "@/lib/api";
-import ProductsDropdown from "./ProductsDropdown";
+import { usePathname } from "next/navigation";
+import { fetchCategoryTree } from "@/lib/api";
+import CategoriesMegaMenu from "./CategoriesMegaMenu";
+import MobileCategoriesNav from "./MobileCategoriesNav";
 import GlobalSearchBar from "./GlobalSearchBar";
 import { buttonRadius } from "@/lib/ui-presets";
 
@@ -10,19 +12,47 @@ const SCROLL_OFFSET = 80;
 const SCROLL_DELTA = 10;
 
 const Header = () => {
+  const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [categoriesOpen, setCategoriesOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
+  const [productGroups, setProductGroups] = useState([]);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [headerHeight, setHeaderHeight] = useState(0);
   const headerRef = useRef(null);
   const lastScrollY = useRef(0);
 
   useEffect(() => {
-    fetchCategories({ top_level: true, active: true })
-      .then(setCategories)
-      .catch(() => setCategories([]));
+    let active = true;
+
+    fetchCategoryTree()
+      .then((tree) => {
+        if (active) setProductGroups(tree);
+      })
+      .catch(() => {
+        if (active) setProductGroups([]);
+      });
+
+    return () => {
+      active = false;
+    };
   }, []);
+
+  useEffect(() => {
+    if (productGroups.length > 0) return;
+
+    let active = true;
+
+    fetchCategoryTree()
+      .then((tree) => {
+        if (active) setProductGroups(tree);
+      })
+      .catch(() => {
+        if (active) setProductGroups([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [pathname, productGroups.length]);
 
   useEffect(() => {
     const updateHeaderHeight = () => {
@@ -99,7 +129,9 @@ const Header = () => {
         {/* Top Banner */}
         <div className="bg-[#333333] w-full">
           <div className="max-w-7xl mx-auto text-white py-1 text-center text-[12px]">
-            Have a Project? <span className="font-semibold underline">Request a Quote!</span>
+            <Link href="/quote" className="hover:text-white/90">
+              Have a Project? <span className="font-semibold underline">Request a Quote!</span>
+            </Link>
           </div>
         </div>
 
@@ -165,7 +197,7 @@ const Header = () => {
         <div className="hidden md:block w-full bg-[#16568D] py-1.5">
           <div className="max-w-7xl mx-auto flex items-center justify-between px-4">
             <div className="flex items-center gap-8 text-white font-bold text-[16px]">
-              <ProductsDropdown categories={categories} />
+              <CategoriesMegaMenu productGroups={productGroups} />
             </div>
             
             <div className="flex-1 max-w-4xl mx-8">
@@ -211,29 +243,10 @@ const Header = () => {
         <div className="flex flex-col py-4 overflow-y-auto">
           <nav className="flex flex-col px-6 gap-2 text-[18px] font-bold text-[#333]">
             
-            <div className="border-b border-gray-100 pb-2">
-              <button 
-                className="w-full flex items-center justify-between hover:text-[#004b87] transition-colors py-2"
-                onClick={() => setCategoriesOpen(!categoriesOpen)}
-              >
-                <span>Categories</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-200 ${categoriesOpen ? "rotate-180" : ""}`}><polyline points="6 9 12 15 18 9"></polyline></svg>
-              </button>
-              
-              {/* Category Dropdown */}
-              <div className={`flex flex-col gap-3 pl-4 overflow-hidden transition-all duration-300 ${categoriesOpen ? "max-h-[500px] mt-2 mb-2" : "max-h-0"}`}>
-                {categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/category/${category.slug}`}
-                    className="text-[15px] font-medium text-gray-600 hover:text-[#004b87]"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {category.name.replace("\n", " ")}
-                  </Link>
-                ))}
-              </div>
-            </div>
+            <MobileCategoriesNav
+              productGroups={productGroups}
+              onNavigate={() => setIsMenuOpen(false)}
+            />
 
             <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Brands</a>
             <Link href="/locations" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>Locations</Link>

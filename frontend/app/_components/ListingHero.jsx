@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Breadcrumbs from "./Breadcrumbs";
+import { getCatalogHref, getProductGroupHref, getBrandInGroupHref } from "@/lib/catalog-urls";
 
 export default function ListingHero({
   categorySlug = null,
+  categoryHref = null,
   categoryName = null,
   title,
   description,
@@ -30,10 +32,10 @@ export default function ListingHero({
     customBreadcrumbItems ||
     [
       { label: "Home", href: "/" },
-      { label: "Categories", href: "/#categories" },
+      { label: "Product Catalog", href: getCatalogHref() },
       {
         label: parentName,
-        href: `/category/${categorySlug}`,
+        href: categoryHref || (categorySlug ? getProductGroupHref(categorySlug) : getCatalogHref()),
         className: "capitalize",
       },
     ].concat(
@@ -41,7 +43,7 @@ export default function ListingHero({
         ? [
             {
               label: brandName,
-              href: `/category/${categorySlug}/brand/${brandSlug}`,
+              href: getBrandInGroupHref(categorySlug, brandSlug),
             },
           ]
         : []

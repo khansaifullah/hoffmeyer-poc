@@ -1,5 +1,6 @@
 import Breadcrumbs from "./Breadcrumbs";
 import BrandLogo from "./BrandLogo";
+import { getProductGroupHref } from "@/lib/catalog-urls";
 import { cardRadius } from "@/lib/ui-presets";
 
 export default function BrandHero({ brand, categorySlug, categoryName }) {
@@ -15,7 +16,7 @@ export default function BrandHero({ brand, categorySlug, categoryName }) {
                 { label: "Categories", href: "/#categories" },
                 {
                   label: categoryName,
-                  href: `/category/${categorySlug}`,
+                  href: getProductGroupHref(categorySlug),
                   className: "capitalize",
                 },
                 { label: brand.name },

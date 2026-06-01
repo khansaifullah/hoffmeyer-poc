@@ -11,7 +11,7 @@ const resources = [
   {
     title: "Request a Quote",
     description: "Get pricing for volume orders, factory-order items, and plant maintenance projects.",
-    href: "/register",
+    href: "/quote",
   },
   {
     title: "Technical Support",

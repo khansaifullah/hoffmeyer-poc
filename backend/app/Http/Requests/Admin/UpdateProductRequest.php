@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Admin;
 
+use App\Models\Category;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -17,7 +18,11 @@ class UpdateProductRequest extends FormRequest
         $productId = $this->route('product')?->id ?? $this->route('product');
 
         return [
-            'category_id' => ['sometimes', 'required', 'exists:categories,id'],
+            'category_ids' => ['sometimes', 'array', 'min:1'],
+            'category_ids.*' => [
+                'integer',
+                Rule::exists('categories', 'id')->where('level', Category::LEVEL_SUBCATEGORY),
+            ],
             'brand_id' => ['nullable', 'exists:brands,id'],
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'slug' => [

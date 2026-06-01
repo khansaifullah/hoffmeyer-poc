@@ -29,7 +29,7 @@ class SearchController extends Controller
         $like = "%{$query}%";
 
         $products = Product::query()
-            ->with(['category', 'brand'])
+            ->with(['category.parent.parent', 'brand'])
             ->where(function ($builder) use ($like) {
                 $builder
                     ->where('name', 'like', $like)
@@ -56,7 +56,7 @@ class SearchController extends Controller
             ]);
 
         $categories = Category::query()
-            ->with('parent')
+            ->with('parent.parent')
             ->where('is_active', true)
             ->where(function ($builder) use ($like) {
                 $builder
@@ -68,18 +68,30 @@ class SearchController extends Controller
             ->limit($limit)
             ->get()
             ->map(function (Category $category) {
-                $isSubcategory = $category->parent_id !== null;
-                $href = $isSubcategory
-                    ? "/category/{$category->parent->slug}/{$category->slug}"
-                    : "/category/{$category->slug}";
+                $href = '/category/'.$category->catalogPath();
+
+                $label = match ($category->level) {
+                    Category::LEVEL_PRODUCT_GROUP => 'Product Group',
+                    Category::LEVEL_CATEGORY => 'Category',
+                    default => 'Subcategory',
+                };
+
+                $meta = match ($category->level) {
+                    Category::LEVEL_PRODUCT_GROUP => null,
+                    Category::LEVEL_CATEGORY => $category->parent?->name,
+                    default => collect([$category->parent?->parent?->name, $category->parent?->name])
+                        ->filter()
+                        ->implode(' · '),
+                };
 
                 return [
                     'type' => 'category',
-                    'label' => $isSubcategory ? 'Subcategory' : 'Category',
+                    'label' => $label,
                     'name' => $category->name,
                     'slug' => $category->slug,
+                    'level' => $category->level,
                     'href' => $href,
-                    'meta' => $isSubcategory ? $category->parent?->name : null,
+                    'meta' => $meta ?: null,
                 ];
             });
 
@@ -90,20 +102,21 @@ class SearchController extends Controller
                     ->where('name', 'like', $like)
                     ->orWhere('slug', 'like', $like);
             })
-            ->with(['products' => fn ($productQuery) => $productQuery->with('category')->orderBy('sort_order')->limit(1)])
+            ->with(['products' => fn ($productQuery) => $productQuery->with('category.parent.parent')->orderBy('sort_order')->limit(1)])
             ->orderBy('sort_order')
             ->orderBy('name')
             ->limit($limit)
             ->get()
             ->map(function (Brand $brand) {
-                $categorySlug = $brand->products->first()?->category?->slug ?? 'bearings';
+                $product = $brand->products->first();
+                $groupSlug = $product?->category?->breadcrumb()->first()?->slug ?? 'bearings';
 
                 return [
                     'type' => 'brand',
                     'label' => 'Brand',
                     'name' => $brand->name,
                     'slug' => $brand->slug,
-                    'href' => "/category/{$categorySlug}/brand/{$brand->slug}",
+                    'href' => "/category/{$groupSlug}/brand/{$brand->slug}",
                     'meta' => null,
                 ];
             });

@@ -1,43 +1,31 @@
-import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import Header from "../../../../_components/Header";
 import Newsletter from "../../../../_components/Newsletter";
-import BrandHero from "../../../../_components/BrandHero";
-import CategorySubcategories from "../../../../_components/CategorySubcategories";
-import CategoryFeaturedProducts from "../../../../_components/CategoryFeaturedProducts";
-import { getBrandBySlug, getCategoryBySlug } from "@/lib/api-server";
+import SectionLoader from "../../../../_components/SectionLoader";
+import {
+  BrandPageHeroSection,
+  BrandPageProductsSection,
+  BrandPageSubcategoriesSection,
+} from "../../../../_components/sections/BrandPageSections";
 
 export default async function BrandPage({ params }) {
   const { slug, brandSlug } = await params;
-  const [category, brand] = await Promise.all([
-    getCategoryBySlug(slug),
-    getBrandBySlug(brandSlug, { category: slug }),
-  ]);
-
-  if (!category || category.parentId || !brand) {
-    notFound();
-  }
-
-  const products = brand.products || [];
 
   return (
     <main className="flex min-h-screen flex-col bg-white">
       <Header />
 
-      <BrandHero brand={brand} categorySlug={slug} categoryName={category.name} />
+      <Suspense fallback={<SectionLoader label="Loading brand..." />}>
+        <BrandPageHeroSection slug={slug} brandSlug={brandSlug} />
+      </Suspense>
 
-      <CategorySubcategories
-        categorySlug={slug}
-        subcategories={category.children || []}
-        brandSlug={brand.slug}
-        titleAccent="Shop"
-        titleRest="by Category"
-      />
+      <Suspense fallback={<SectionLoader label="Loading categories..." minHeight="min-h-[180px]" />}>
+        <BrandPageSubcategoriesSection slug={slug} brandSlug={brandSlug} />
+      </Suspense>
 
-      <CategoryFeaturedProducts
-        products={products}
-        categoryName={category.name}
-        categorySlug={slug}
-      />
+      <Suspense fallback={<SectionLoader label="Loading products..." minHeight="min-h-[320px]" />}>
+        <BrandPageProductsSection slug={slug} brandSlug={brandSlug} />
+      </Suspense>
 
       <Newsletter />
     </main>

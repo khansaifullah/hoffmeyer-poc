@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,6 +13,7 @@ import {
   updateProduct,
 } from "@/lib/api";
 import { AdminFormSkeleton } from "./AdminSkeletons";
+import AdminImageUpload from "./AdminImageUpload";
 import {
   AdminAlert,
   AdminField,
@@ -36,8 +37,41 @@ const MATERIAL_OPTIONS = ["Rubber", "PVC", "Synthetic"];
 
 const EMPTY_SPEC = { label: "", value: "" };
 
+function flattenSubcategoryOptions(categories, ancestors = []) {
+  return categories.flatMap((category) => {
+    const path = [...ancestors, category.name];
+
+    if (category.level === "subcategory") {
+      return [{ id: category.id, label: path.join(" > ") }];
+    }
+
+    if (category.children?.length) {
+      return flattenSubcategoryOptions(category.children, path);
+    }
+
+    return [];
+  });
+}
+
+function filterSubcategoryOptions(options, query, selectedIds) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return options;
+  }
+
+  const matches = options.filter((option) => option.label.toLowerCase().includes(normalizedQuery));
+  const selectedNotVisible = options.filter(
+    (option) =>
+      selectedIds.includes(String(option.id)) &&
+      !option.label.toLowerCase().includes(normalizedQuery)
+  );
+
+  return [...selectedNotVisible, ...matches];
+}
+
 const defaultForm = {
-  category_id: "",
+  category_ids: [],
   brand_id: "",
   name: "",
   slug: "",
@@ -67,7 +101,7 @@ function productToForm(product) {
   if (!product) return defaultForm;
 
   return {
-    category_id: String(product.categoryId || product.category?.id || ""),
+    category_ids: (product.categoryIds || (product.categoryId ? [product.categoryId] : [])).map(String),
     brand_id: product.brandId ? String(product.brandId) : "",
     name: product.name || "",
     slug: product.slug || "",
@@ -98,7 +132,8 @@ function productToForm(product) {
 export default function ProductForm({ productId = null, initialProduct = null }) {
   const router = useRouter();
   const [form, setForm] = useState(productToForm(initialProduct));
-  const [categories, setCategories] = useState([]);
+  const [subcategoryOptions, setSubcategoryOptions] = useState([]);
+  const [categorySearch, setCategorySearch] = useState("");
   const [brands, setBrands] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -107,8 +142,11 @@ export default function ProductForm({ productId = null, initialProduct = null })
   useEffect(() => {
     async function loadOptions() {
       try {
-        const [categoryList, brandList] = await Promise.all([fetchCategories(), fetchBrands()]);
-        setCategories(categoryList.filter((category) => !category.parentId));
+        const [categoryTree, brandList] = await Promise.all([
+          fetchCategories({ tree: true }),
+          fetchBrands(),
+        ]);
+        setSubcategoryOptions(flattenSubcategoryOptions(categoryTree));
         setBrands(brandList);
       } catch (err) {
         setError(err.message || "Failed to load form options");
@@ -125,6 +163,11 @@ export default function ProductForm({ productId = null, initialProduct = null })
       setForm(productToForm(initialProduct));
     }
   }, [initialProduct]);
+
+  const visibleSubcategoryOptions = useMemo(
+    () => filterSubcategoryOptions(subcategoryOptions, categorySearch, form.category_ids),
+    [subcategoryOptions, categorySearch, form.category_ids]
+  );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -146,15 +189,32 @@ export default function ProductForm({ productId = null, initialProduct = null })
     }));
   }
 
+  function toggleCategory(categoryId) {
+    setForm((current) => {
+      const id = String(categoryId);
+      const selected = current.category_ids.includes(id)
+        ? current.category_ids.filter((value) => value !== id)
+        : [...current.category_ids, id];
+
+      return { ...current, category_ids: selected };
+    });
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError("");
+
+    if (form.category_ids.length === 0) {
+      setError("Select at least one subcategory.");
+      return;
+    }
+
     setLoading(true);
 
     try {
       const payload = productToPayload({
         ...form,
-        category_id: Number(form.category_id),
+        category_ids: form.category_ids.map(Number),
         brand_id: form.brand_id ? Number(form.brand_id) : null,
         price: Number(form.price),
         sort_order: Number(form.sort_order) || 0,
@@ -208,20 +268,48 @@ export default function ProductForm({ productId = null, initialProduct = null })
           />
         </AdminField>
 
-        <AdminField label="Category" htmlFor="product-category">
-          <AdminSelect
-            id="product-category"
-            value={form.category_id}
-            onValueChange={(value) => updateField("category_id", value)}
-            placeholder="Select category"
-            options={[
-              { value: "", label: "Select category" },
-              ...categories.map((category) => ({
-                value: String(category.id),
-                label: category.name,
-              })),
-            ]}
+        <AdminField label="Categories" htmlFor="product-category-search" className="md:col-span-2">
+          <AdminInput
+            id="product-category-search"
+            type="search"
+            value={categorySearch}
+            onChange={(event) => setCategorySearch(event.target.value)}
+            placeholder="Search categories..."
+            autoComplete="off"
           />
+          <div
+            id="product-categories"
+            className="max-h-64 space-y-2 overflow-y-auto rounded-lg border border-border p-3"
+          >
+            {subcategoryOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No subcategories available.</p>
+            ) : visibleSubcategoryOptions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No categories match your search.</p>
+            ) : (
+              visibleSubcategoryOptions.map((option) => (
+                <label
+                  key={option.id}
+                  className="flex items-start gap-3 text-sm font-medium text-[#333]"
+                >
+                  <Checkbox
+                    checked={form.category_ids.includes(String(option.id))}
+                    onCheckedChange={() => toggleCategory(option.id)}
+                    className="mt-0.5 data-checked:border-[#16568D] data-checked:bg-[#16568D] data-checked:text-white"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {form.category_ids.length > 0
+              ? `${form.category_ids.length} selected`
+              : "Select one or more subcategories"}
+            {categorySearch.trim()
+              ? ` · ${visibleSubcategoryOptions.length} shown`
+              : ` · ${subcategoryOptions.length} total`}
+            . The first selected category is used as the primary category.
+          </p>
         </AdminField>
 
         <AdminField label="Brand" htmlFor="product-brand">
@@ -298,11 +386,12 @@ export default function ProductForm({ productId = null, initialProduct = null })
         </AdminField>
       </div>
 
-      <AdminField label="Primary Image URL" htmlFor="product-image">
-        <AdminInput
-          id="product-image"
+      <AdminField label="Primary Image" htmlFor="product-image-upload">
+        <AdminImageUpload
+          id="product-image-upload"
           value={form.image}
-          onChange={(event) => updateField("image", event.target.value)}
+          onChange={(value) => updateField("image", value)}
+          placeholder="Image URL or upload a file"
         />
       </AdminField>
 
@@ -349,14 +438,35 @@ export default function ProductForm({ productId = null, initialProduct = null })
             Add image
           </Button>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-4">
           {form.images.map((image, index) => (
-            <AdminInput
-              key={index}
-              value={image}
-              onChange={(event) => updateImage(index, event.target.value)}
-              placeholder={`Image URL ${index + 1}`}
-            />
+            <div key={index} className="rounded-lg border border-border p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-medium text-[#333]">Gallery image {index + 1}</p>
+                {form.images.length > 1 ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      updateField(
+                        "images",
+                        form.images.filter((_, imageIndex) => imageIndex !== index)
+                      )
+                    }
+                    className="text-muted-foreground"
+                  >
+                    Remove
+                  </Button>
+                ) : null}
+              </div>
+              <AdminImageUpload
+                id={`product-gallery-image-${index}`}
+                value={image}
+                onChange={(value) => updateImage(index, value)}
+                placeholder={`Image URL ${index + 1} or upload a file`}
+              />
+            </div>
           ))}
         </div>
       </div>

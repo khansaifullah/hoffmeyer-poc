@@ -1,6 +1,7 @@
 import Link from "next/link";
 import SectionHeading from "./SectionHeading";
 import BrandLogo from "./BrandLogo";
+import { getProductGroupHref, getBrandInGroupHref } from "@/lib/catalog-urls";
 import { cardRadius, buttonRadius } from "@/lib/ui-presets";
 
 export default function ShopByBrand({ categorySlug, categoryName, brands = [] }) {
@@ -19,7 +20,7 @@ export default function ShopByBrand({ categorySlug, categoryName, brands = [] })
           {brands.map((brand) => (
             <Link
               key={brand.id}
-              href={`/category/${categorySlug}/brand/${brand.slug}`}
+              href={getBrandInGroupHref(categorySlug, brand.slug)}
               className={`flex h-24 items-center justify-center ${cardRadius} border border-gray-200 bg-white px-4 transition-colors hover:border-[#16568D] md:h-28`}
             >
               <BrandLogo brand={brand} size="lg" />
@@ -29,7 +30,7 @@ export default function ShopByBrand({ categorySlug, categoryName, brands = [] })
 
         <div className="mt-8 flex justify-center">
           <Link
-            href={`/category/${categorySlug}`}
+            href={getProductGroupHref(categorySlug)}
             className={`border border-[#16568D] bg-white px-8 py-2.5 ${buttonRadius} text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white`}
           >
             View All Brands

@@ -1,41 +1,36 @@
-import { notFound } from "next/navigation";
-import Header from "../../_components/Header";
-import Newsletter from "../../_components/Newsletter";
-import CategoryHero from "../../_components/CategoryHero";
-import CategorySubcategories from "../../_components/CategorySubcategories";
-import ShopByBrand from "../../_components/ShopByBrand";
-import CategoryFeaturedProducts from "../../_components/CategoryFeaturedProducts";
-import { getBrandsForCategory, getCategoryBySlug } from "@/lib/api-server";
+import { Suspense } from "react";
+import Header from "@/app/_components/Header";
+import Newsletter from "@/app/_components/Newsletter";
+import SectionLoader from "@/app/_components/SectionLoader";
+import {
+  ProductGroupBrandsSection,
+  ProductGroupCategoriesSection,
+  ProductGroupFeaturedProductsSection,
+  ProductGroupHeroSection,
+} from "@/app/_components/sections/ProductGroupSections";
 
-export default async function CategoryDetail({ params }) {
+export default async function ProductGroupPage({ params }) {
   const { slug } = await params;
-  const [category, brands] = await Promise.all([
-    getCategoryBySlug(slug),
-    getBrandsForCategory(slug),
-  ]);
-
-  if (!category || category.parentId) {
-    notFound();
-  }
-
-  const products = category.products || [];
 
   return (
     <main className="flex min-h-screen flex-col bg-white">
       <Header />
 
-      <CategoryHero category={category} />
-      <CategorySubcategories
-        categorySlug={slug}
-        subcategories={category.children || []}
-        titleAccent={category.name.toUpperCase()}
-      />
-      <ShopByBrand categorySlug={slug} categoryName={category.name} brands={brands} />
-      <CategoryFeaturedProducts
-        products={products}
-        categoryName={category.name}
-        categorySlug={slug}
-      />
+      <Suspense fallback={<SectionLoader label="Loading product group..." />}>
+        <ProductGroupHeroSection slug={slug} />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader label="Loading categories..." minHeight="min-h-[280px]" />}>
+        <ProductGroupCategoriesSection slug={slug} />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader label="Loading brands..." className="bg-[#f2f2f2]" />}>
+        <ProductGroupBrandsSection slug={slug} />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader label="Loading products..." minHeight="min-h-[320px]" />}>
+        <ProductGroupFeaturedProductsSection slug={slug} />
+      </Suspense>
 
       <Newsletter />
     </main>
