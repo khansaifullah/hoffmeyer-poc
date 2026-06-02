@@ -8,6 +8,13 @@ export async function LandingProductGroupsSection() {
 }
 
 export async function CatalogProductGroupsSection() {
-  const productGroups = await getCatalogProductGroups();
+  let productGroups = [];
+
+  try {
+    productGroups = await getCatalogProductGroups();
+  } catch {
+    productGroups = [];
+  }
+
   return <CatalogProductGroups groups={productGroups} />;
 }

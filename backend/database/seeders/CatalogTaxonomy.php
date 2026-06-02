@@ -13,6 +13,7 @@ class CatalogTaxonomy
      *     image?: string,
      *     categories: list<array{
      *         name: string,
+     *         image?: string,
      *         subcategories: list<string|array{name: string, description?: string}>
      *     }>
      * }>
@@ -27,6 +28,7 @@ class CatalogTaxonomy
                 'categories' => [
                     [
                         'name' => 'Conveyor Belt',
+                        'image' => '/images/products/conveyor-belt.png',
                         'subcategories' => [
                             'Heavy Duty Belt (Domestic + Import)',
                             'PVC Belt',
@@ -42,6 +44,7 @@ class CatalogTaxonomy
                     ],
                     [
                         'name' => 'Belt Accessories',
+                        'image' => '/images/products/heavy-duty-belt.png',
                         'subcategories' => [
                             'Fasteners — Clipper',
                             'Fasteners — Flexco / Alligator',
@@ -54,12 +57,14 @@ class CatalogTaxonomy
                     ],
                     [
                         'name' => 'Skirtboard & Lining',
+                        'image' => '/images/products/packing-sealing-v2.png',
                         'subcategories' => [
                             'Skirtboard Rubber',
                         ],
                     ],
                     [
                         'name' => 'Conveyor Components',
+                        'image' => '/images/products/conveyor-components.png',
                         'subcategories' => [
                             'Idlers',
                             'Conveyor Pulleys',
@@ -300,6 +305,7 @@ class CatalogTaxonomy
                 'categories' => [
                     [
                         'name' => 'Steam & Piping',
+                        'image' => '/images/products/pipe-valves.png',
                         'subcategories' => [
                             'Steam Traps — Emerson / Yarway',
                             'Yarway Power / BOV Hydrop',
@@ -310,6 +316,7 @@ class CatalogTaxonomy
                     ],
                     [
                         'name' => 'Instrumentation',
+                        'image' => '/images/products/motors-control.png',
                         'subcategories' => [
                             'Emerson / Penberthy',
                             'Maxos Glass',
@@ -424,6 +431,7 @@ class CatalogTaxonomy
                 'categories' => [
                     [
                         'name' => 'PPE',
+                        'image' => '/images/products/safety-gear-v2.png',
                         'subcategories' => [
                             'Rainwear / Gloves / Boots',
                             'Safety Products',
@@ -431,6 +439,7 @@ class CatalogTaxonomy
                     ],
                     [
                         'name' => 'Tools & Abrasives',
+                        'image' => '/images/products/huskey.png',
                         'subcategories' => [
                             'Abrasives',
                             'Tools',

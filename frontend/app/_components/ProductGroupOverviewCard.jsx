@@ -26,18 +26,15 @@ export default function ProductGroupOverviewCard({ group, categoryLimit = PREVIE
     <motion.article
       variants={fadeUpVariant}
       whileHover={cardHoverMotion}
-      className={`flex h-[438px] flex-col overflow-hidden ${cardRadius} border border-[#d7e4ef] bg-white shadow-[0_8px_30px_rgba(0,75,135,0.06)] transition-shadow hover:shadow-[0_14px_40px_rgba(0,75,135,0.12)]`}
+      className={`flex h-[458px] flex-col overflow-hidden ${cardRadius} border border-[#d7e4ef] bg-white shadow-[0_8px_30px_rgba(0,75,135,0.06)] transition-shadow hover:shadow-[0_14px_40px_rgba(0,75,135,0.12)]`}
     >
-      <div className="flex h-[118px] shrink-0 flex-col bg-gradient-to-br from-[#16568D] to-[#004b87] px-4 pb-4 pt-4">
-        <h3 className="line-clamp-2 h-[38px] text-[15px] font-bold leading-[1.25] text-white md:text-[16px]">
+      <div className="flex h-[118px] shrink-0 items-center justify-center bg-gradient-to-br from-[#16568D] to-[#004b87] px-4">
+        <h3 className="line-clamp-2 text-center text-[17px] font-bold leading-[1.25] text-white md:text-[18px]">
           {group.name}
         </h3>
-        <p className="mt-2 line-clamp-2 h-[34px] text-[11px] leading-snug text-white/75 md:text-[12px]">
-          {group.heroDescription || "Trusted brands and top sellers for your operation."}
-        </p>
       </div>
 
-      <div className="grid h-[268px] shrink-0 grid-cols-2 gap-3 p-4">
+      <div className="grid h-[288px] shrink-0 grid-cols-2 content-start gap-3 p-4">
         {slots.map((category, index) =>
           category ? (
             <ProductGroupCategoryTile

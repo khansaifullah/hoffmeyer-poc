@@ -88,8 +88,7 @@ export async function getLandingProductGroups() {
 }
 
 export async function getCatalogProductGroups() {
-  const tree = await getCategoryTree();
-  return tree.map((group) => enrichGroupPreview(group));
+  return getCategoryTree();
 }
 
 function enrichGroupPreview(group) {

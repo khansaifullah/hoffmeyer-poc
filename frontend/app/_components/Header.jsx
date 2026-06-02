@@ -194,8 +194,8 @@ const Header = () => {
         </div>
 
         {/* Desktop Blue Bar */}
-        <div className="hidden md:block w-full bg-[#16568D] py-1.5">
-          <div className="max-w-7xl mx-auto flex items-center justify-between px-4">
+        <div className="hidden md:block w-full overflow-visible bg-[#16568D] py-1.5">
+          <div className="max-w-7xl mx-auto flex items-center justify-between overflow-visible px-4">
             <div className="flex items-center gap-8 text-white font-bold text-[16px]">
               <CategoriesMegaMenu productGroups={productGroups} />
             </div>

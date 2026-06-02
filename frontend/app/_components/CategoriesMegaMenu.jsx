@@ -7,14 +7,19 @@ import { getCatalogHref, getCategoryHref, getProductGroupHref } from "@/lib/cata
 
 const MAX_CATEGORIES = 5;
 
+function getGroupCategoryHref(group, category) {
+  return category.href || getCategoryHref(category) || getProductGroupHref(group.slug);
+}
+
 function GroupColumn({ group, onNavigate }) {
   const categories = (group.children || []).slice(0, MAX_CATEGORIES);
   const hasMore = (group.children || []).length > MAX_CATEGORIES;
+  const groupHref = group.href || getProductGroupHref(group.slug);
 
   return (
     <div className="min-w-0">
       <Link
-        href={getProductGroupHref(group.slug)}
+        href={groupHref}
         onClick={onNavigate}
         className="group mb-3 inline-flex items-center gap-2.5"
       >
@@ -30,7 +35,7 @@ function GroupColumn({ group, onNavigate }) {
         {categories.map((category) => (
           <li key={category.slug}>
             <Link
-              href={getCategoryHref(category)}
+              href={getGroupCategoryHref(group, category)}
               onClick={onNavigate}
               className="block text-[13px] leading-snug text-[#4b5563] transition-colors hover:text-[#16568D]"
             >
@@ -41,7 +46,7 @@ function GroupColumn({ group, onNavigate }) {
         {hasMore ? (
           <li>
             <Link
-              href={getProductGroupHref(group.slug)}
+              href={groupHref}
               onClick={onNavigate}
               className="block text-[12px] font-semibold text-[#16568D] hover:text-[#004b87]"
             >
@@ -54,9 +59,27 @@ function GroupColumn({ group, onNavigate }) {
   );
 }
 
+const CLOSE_DELAY_MS = 120;
+
 export default function CategoriesMegaMenu({ productGroups = [] }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const closeTimerRef = useRef(null);
+
+  const openMenu = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const scheduleClose = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => setOpen(false), CLOSE_DELAY_MS);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -82,7 +105,21 @@ export default function CategoriesMegaMenu({ productGroups = [] }) {
     };
   }, [open]);
 
-  const closeMenu = () => setOpen(false);
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    };
+  }, []);
+
+  const closeMenu = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+    setOpen(false);
+  };
 
   if (productGroups.length === 0) {
     return (
@@ -96,8 +133,8 @@ export default function CategoriesMegaMenu({ productGroups = [] }) {
     <div
       ref={containerRef}
       className="relative"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      onMouseEnter={openMenu}
+      onMouseLeave={scheduleClose}
     >
       <button
         type="button"
@@ -111,22 +148,24 @@ export default function CategoriesMegaMenu({ productGroups = [] }) {
       </button>
 
       {open ? (
-        <div className="absolute left-0 top-full z-50 mt-2 w-[min(100vw-2rem,72rem)] rounded-xl border border-[#d7e4ef] bg-white shadow-[0_20px_50px_rgba(0,75,135,0.15)]">
-          <div className="grid grid-cols-2 gap-x-8 gap-y-8 p-6 lg:grid-cols-3 xl:grid-cols-4">
-            {productGroups.map((group) => (
-              <GroupColumn key={group.slug} group={group} onNavigate={closeMenu} />
-            ))}
-          </div>
+        <div className="absolute left-0 top-full z-50 w-[min(100vw-2rem,72rem)] pt-2">
+          <div className="rounded-xl border border-[#d7e4ef] bg-white shadow-[0_20px_50px_rgba(0,75,135,0.15)]">
+            <div className="grid grid-cols-2 gap-x-8 gap-y-8 p-6 lg:grid-cols-3 xl:grid-cols-4">
+              {productGroups.map((group) => (
+                <GroupColumn key={group.slug} group={group} onNavigate={closeMenu} />
+              ))}
+            </div>
 
-          <div className="flex items-center justify-between border-t border-[#e8eef3] bg-[#f8fbfd] px-6 py-3.5">
-            <p className="text-[12px] text-[#5b6775]">Browse by product group, category, and subcategory.</p>
-            <Link
-              href={getCatalogHref()}
-              onClick={closeMenu}
-              className="text-[13px] font-bold text-[#16568D] transition-colors hover:text-[#004b87]"
-            >
-              Browse full catalog →
-            </Link>
+            <div className="flex items-center justify-between border-t border-[#e8eef3] bg-[#f8fbfd] px-6 py-3.5">
+              <p className="text-[12px] text-[#5b6775]">Browse by product group, category, and subcategory.</p>
+              <Link
+                href={getCatalogHref()}
+                onClick={closeMenu}
+                className="text-[13px] font-bold text-[#16568D] transition-colors hover:text-[#004b87]"
+              >
+                Browse full catalog →
+              </Link>
+            </div>
           </div>
         </div>
       ) : null}

@@ -24,6 +24,7 @@ import {
   MAX_COMPARE_PRODUCTS,
   removeCompareSlug,
 } from "@/lib/product-compare";
+import { getQuoteHref } from "@/lib/quote";
 import { buttonRadius, cardRadius, inputRadius, menuRadius } from "@/lib/ui-presets";
 import CompareBar from "./CompareBar";
 import StockBadge from "./StockBadge";
@@ -100,12 +101,16 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
             />
           </div>
 
-          <button
-            type="button"
-            className={`h-11 w-full bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
+          <Link
+            href={getQuoteHref({
+              productSlug: product.slug,
+              productName: product.name,
+              quantity,
+            })}
+            className={`inline-flex h-11 w-full items-center justify-center bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
           >
-            Add to Cart
-          </button>
+            Request a Quote
+          </Link>
         </div>
       </div>
 
@@ -148,12 +153,16 @@ function ProductGridCard({ product, quantity, onQuantityChange, compared, onComp
           onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))}
           className={`h-9 w-14 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87] ${inputRadius}`}
         />
-        <button
-          type="button"
-          className={`h-9 flex-1 bg-[#004b87] text-[13px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
+        <Link
+          href={getQuoteHref({
+            productSlug: product.slug,
+            productName: product.name,
+            quantity,
+          })}
+          className={`inline-flex h-9 flex-1 items-center justify-center bg-[#004b87] text-[13px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
         >
-          Add to Cart
-        </button>
+          Request a Quote
+        </Link>
       </div>
 
       <label className="mt-3 flex cursor-pointer items-center gap-2 border-t border-gray-200 pt-3 text-[13px] text-gray-600">
