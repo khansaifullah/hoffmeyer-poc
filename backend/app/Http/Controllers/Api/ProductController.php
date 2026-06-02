@@ -24,11 +24,7 @@ class ProductController extends Controller
                 ->first();
 
             if ($productGroup) {
-                $subcategoryIds = $productGroup->subcategoryIds();
-
-                if ($subcategoryIds !== []) {
-                    $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $subcategoryIds));
-                }
+                $productGroup->applyProductFilter($query);
             }
         }
 
@@ -39,11 +35,7 @@ class ProductController extends Controller
                 ->first();
 
             if ($category) {
-                $subcategoryIds = $category->subcategoryIds();
-
-                if ($subcategoryIds !== []) {
-                    $query->whereHas('categories', fn ($builder) => $builder->whereIn('categories.id', $subcategoryIds));
-                }
+                $category->applyProductFilter($query);
             }
         }
 
@@ -54,7 +46,7 @@ class ProductController extends Controller
                 ->first();
 
             if ($subcategory) {
-                $query->whereHas('categories', fn ($builder) => $builder->where('categories.id', $subcategory->id));
+                $subcategory->applyProductFilter($query);
             }
         }
 

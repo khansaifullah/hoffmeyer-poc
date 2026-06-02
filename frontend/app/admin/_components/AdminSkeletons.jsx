@@ -51,25 +51,49 @@ export function AdminShellSkeleton() {
 
 export function AdminDashboardSkeleton() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="space-y-2">
         <Skeleton className="h-8 w-40" />
-        <Skeleton className="h-4 w-full max-w-2xl" />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <Skeleton key={index} className="h-10 w-36" />
-        ))}
+        <Skeleton className="h-4 w-80 max-w-full" />
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index}>
-            <CardContent className="space-y-3 py-6">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-10 w-16" />
+          <Card key={index} className="shadow-sm">
+            <CardContent className="flex items-center gap-4 py-4">
+              <Skeleton className="h-11 w-11 shrink-0 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-7 w-14" />
+              </div>
             </CardContent>
           </Card>
         ))}
+      </div>
+      <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+        <Card className="shadow-sm">
+          <CardHeader className="border-b">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-4 w-56" />
+          </CardHeader>
+          <CardContent className="grid gap-3 p-5 sm:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-24 w-full rounded-xl" />
+            ))}
+          </CardContent>
+        </Card>
+        <div className="space-y-6">
+          <Card className="shadow-sm">
+            <CardHeader className="border-b">
+              <Skeleton className="h-5 w-28" />
+            </CardHeader>
+            <CardContent className="space-y-2 p-5">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} className="h-10 w-full rounded-lg" />
+              ))}
+            </CardContent>
+          </Card>
+          <Skeleton className="h-40 w-full rounded-xl" />
+        </div>
       </div>
     </div>
   );
@@ -77,9 +101,10 @@ export function AdminDashboardSkeleton() {
 
 export function AdminTableSkeleton({ columns = 6, rows = 8 }) {
   return (
-    <Card className="mt-6 shadow-sm">
+    <Card className="shadow-sm">
       <CardContent className="p-0">
-        <Table>
+        <div className="px-5 py-1">
+          <Table>
           <TableHeader>
             <TableRow>
               {Array.from({ length: columns }).map((_, index) => (
@@ -101,6 +126,7 @@ export function AdminTableSkeleton({ columns = 6, rows = 8 }) {
             ))}
           </TableBody>
         </Table>
+        </div>
       </CardContent>
     </Card>
   );

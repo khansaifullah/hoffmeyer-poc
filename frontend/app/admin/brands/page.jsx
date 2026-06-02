@@ -20,8 +20,8 @@ import {
   AdminPageHeader,
   AdminStatusBadge,
   AdminTableActions,
-  AdminToolbarCard,
   AdminYesBadge,
+  adminTablePaddingClass,
   adminToastError,
   adminToastSuccess,
 } from "../_components/AdminUi";
@@ -68,17 +68,17 @@ export default function AdminBrandsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminPageHeader title="Brands" description={`${brands.length} brands in catalog.`}>
         <AdminLinkButton href="/admin/brands/new">+ Add Brand</AdminLinkButton>
       </AdminPageHeader>
 
-      <AdminToolbarCard>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-muted-foreground">Manage manufacturer brands and logos.</p>
         <AdminLinkButton href="/admin/brands/new" variant="outline">
           + New Brand
         </AdminLinkButton>
-      </AdminToolbarCard>
+      </div>
 
       {error ? <AdminAlert>{error}</AdminAlert> : null}
 
@@ -87,53 +87,59 @@ export default function AdminBrandsPage() {
       ) : (
         <Card className="shadow-sm">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Featured</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {brands.length === 0 ? (
+            <div className={adminTablePaddingClass}>
+              <Table containerClassName="overflow-x-visible">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                      No brands found.{" "}
-                      <Link href="/admin/brands/new" className="font-semibold text-[#16568D] hover:underline">
-                        Add your first brand
-                      </Link>
-                    </TableCell>
+                    <TableHead className="pl-0">Name</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead>Featured</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead className="pr-0 text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  brands.map((brand) => (
-                    <TableRow key={brand.id}>
-                      <TableCell className="font-medium text-[#333]">{brand.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{brand.slug}</TableCell>
-                      <TableCell className="text-muted-foreground">{brand.productsCount ?? 0}</TableCell>
-                      <TableCell>
-                        <AdminYesBadge value={brand.isFeatured} />
-                      </TableCell>
-                      <TableCell>
-                        <AdminStatusBadge active={brand.isActive} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <AdminTableActions
-                          editHref={`/admin/brands/${brand.id}/edit`}
-                          onDelete={() => setDeleteTarget({ id: brand.id, name: brand.name })}
-                          deleting={deletingId === brand.id}
-                          editLabel="Edit brand"
-                          deleteLabel="Delete brand"
-                        />
+                </TableHeader>
+                <TableBody>
+                  {brands.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                        No brands found.{" "}
+                        <Link href="/admin/brands/new" className="font-semibold text-[#16568D] hover:underline">
+                          Add your first brand
+                        </Link>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    brands.map((brand) => (
+                      <TableRow key={brand.id} className="hover:bg-muted/30">
+                        <TableCell className="py-2.5 pl-0 font-medium text-[#333]">{brand.name}</TableCell>
+                        <TableCell className="py-2.5 text-muted-foreground">{brand.slug}</TableCell>
+                        <TableCell className="py-2.5 text-muted-foreground">{brand.productsCount ?? 0}</TableCell>
+                        <TableCell className="py-2.5">
+                          <AdminYesBadge value={brand.isFeatured} />
+                        </TableCell>
+                        <TableCell className="py-2.5">
+                          <AdminStatusBadge active={brand.isActive} />
+                        </TableCell>
+                        <TableCell className="py-2.5 pr-0 text-right">
+                          <AdminTableActions
+                            editHref={`/admin/brands/${brand.id}/edit`}
+                            onDelete={() => setDeleteTarget({ id: brand.id, name: brand.name })}
+                            deleting={deletingId === brand.id}
+                            editLabel="Edit brand"
+                            deleteLabel="Delete brand"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className={`border-t py-2.5 text-sm text-muted-foreground ${adminTablePaddingClass}`}>
+              {brands.length} brand{brands.length === 1 ? "" : "s"}
+            </div>
           </CardContent>
         </Card>
       )}

@@ -3,6 +3,7 @@ import CategorySubcategories from "@/app/_components/CategorySubcategories";
 import ProductListingSection from "@/app/_components/ProductListingSection";
 import { getBrandBySlug, getCategoryBySlug, getProductsForListing } from "@/lib/api-server";
 import { getCategoryHref } from "@/lib/catalog-urls";
+import { buildListingQueryParams } from "@/lib/listing";
 import { notFound } from "next/navigation";
 import { requireMidCategory, requireProductGroup } from "@/lib/category-page";
 
@@ -64,6 +65,10 @@ export async function MidCategoryProductsSection({
   brandSlug = null,
 }) {
   const category = requireMidCategory(await getCategoryBySlug(categorySlug), slug, categorySlug);
+  const listingParams = buildListingQueryParams({
+    categorySlug,
+    brandSlug: brandSlug || undefined,
+  });
   const { products, meta } = await getProductsForListing({
     categorySlug,
     brandSlug: brandSlug || undefined,
@@ -74,6 +79,8 @@ export async function MidCategoryProductsSection({
       products={products}
       categoryName={category.name}
       resultCount={meta?.total ?? products.length}
+      lastPage={meta?.last_page ?? 1}
+      listingParams={listingParams}
     />
   );
 }

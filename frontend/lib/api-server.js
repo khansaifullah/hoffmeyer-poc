@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { mapApiBrand, mapApiCategory, mapApiProduct } from "./api";
+import { LISTING_PAGE_SIZE, buildListingQueryParams } from "./listing";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
 
@@ -115,19 +116,23 @@ export const getProductsForListing = cache(async ({
   categorySlug,
   subcategorySlug,
   brandSlug,
-  perPage = 100,
+  perPage = LISTING_PAGE_SIZE,
+  page = 1,
 } = {}) => {
-  const params = { per_page: perPage };
-  if (productGroup) params.product_group = productGroup;
-  if (categorySlug) params.category = categorySlug;
-  if (subcategorySlug) params.subcategory = subcategorySlug;
-  if (brandSlug) params.brand = brandSlug;
+  const params = buildListingQueryParams({
+    productGroup,
+    categorySlug,
+    subcategorySlug,
+    brandSlug,
+    page,
+    perPage,
+  });
 
   const result = await serverFetch(`/products${buildQuery(params)}`);
-  if (!result) return { products: [], meta: { total: 0 } };
+  if (!result) return { products: [], meta: { total: 0, last_page: 1, current_page: 1 } };
 
   return {
     products: result.data.map(mapApiProduct),
-    meta: result.meta || { total: result.data.length },
+    meta: result.meta || { total: result.data.length, last_page: 1, current_page: 1 },
   };
 });

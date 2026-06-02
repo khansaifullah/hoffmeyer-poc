@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import PlaceholderImage from "@/app/_components/PlaceholderImage";
 import { categories as defaultCategories } from "@/lib/categories";
 import { getProductGroupHref } from "@/lib/catalog-urls";
 import { cardHoverMotion, fadeUpTransition, fadeUpVariant, inViewViewport, staggerContainerVariant } from "@/lib/motion-presets";
@@ -48,7 +49,7 @@ export default function ShopByCategory({
                   }`}
                 >
                   <div className="flex min-h-0 w-full flex-1 items-center justify-center p-2">
-                    <img
+                    <PlaceholderImage
                       src={cat.image}
                       alt={cat.name}
                       className="max-h-[85%] max-w-[85%] object-contain transition-transform duration-300 group-hover:scale-105"

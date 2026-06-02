@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
@@ -12,21 +13,50 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { deleteCategory, fetchAdminCategories } from "@/lib/api";
+import { pillRadius } from "@/lib/ui-presets";
 import { AdminTableSkeleton } from "../_components/AdminSkeletons";
 import {
   AdminAlert,
   AdminConfirmDialog,
+  AdminInput,
   AdminLinkButton,
   AdminPageHeader,
   AdminStatusBadge,
   AdminTableActions,
-  AdminToolbarCard,
+  adminTablePaddingClass,
   adminToastError,
   adminToastSuccess,
 } from "../_components/AdminUi";
 
+const PAGE_SIZE = 25;
+
+const LEVEL_TABS = [
+  { value: "product_group", label: "Product groups" },
+  { value: "category", label: "Categories" },
+  { value: "subcategory", label: "Subcategories" },
+];
+
+const LEVEL_LABELS = {
+  product_group: "Product group",
+  category: "Category",
+  subcategory: "Subcategory",
+};
+
+function getParentLabel(category) {
+  const breadcrumb = category.breadcrumb || [];
+
+  if (breadcrumb.length < 2) {
+    return "—";
+  }
+
+  return breadcrumb[breadcrumb.length - 2]?.name || "—";
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState([]);
+  const [level, setLevel] = useState("product_group");
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
@@ -34,8 +64,11 @@ export default function AdminCategoriesPage() {
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
+      setError("");
+
       try {
-        setCategories(await fetchAdminCategories());
+        setCategories(await fetchAdminCategories({ level }));
       } catch (err) {
         setError(err.message || "Failed to load categories");
       } finally {
@@ -44,10 +77,31 @@ export default function AdminCategoriesPage() {
     }
 
     load();
-  }, []);
+  }, [level]);
 
-  const topLevel = categories.filter((category) => !category.parentId);
-  const subcategories = categories.filter((category) => category.parentId);
+  useEffect(() => {
+    setPage(1);
+  }, [level, search]);
+
+  const filteredCategories = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      return categories;
+    }
+
+    return categories.filter((category) => {
+      const parent = getParentLabel(category).toLowerCase();
+      return (
+        category.name.toLowerCase().includes(query) ||
+        category.slug.toLowerCase().includes(query) ||
+        parent.includes(query)
+      );
+    });
+  }, [categories, search]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCategories.length / PAGE_SIZE));
+  const pageItems = filteredCategories.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function confirmDelete() {
     if (!deleteTarget) return;
@@ -69,21 +123,47 @@ export default function AdminCategoriesPage() {
     }
   }
 
+  const activeTab = LEVEL_TABS.find((tab) => tab.value === level);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <AdminPageHeader
         title="Categories"
-        description={`${topLevel.length} top-level and ${subcategories.length} subcategories in catalog.`}
+        description={`Browse and manage ${activeTab?.label.toLowerCase() || "categories"} in the catalog.`}
       >
         <AdminLinkButton href="/admin/categories/new">+ Add Category</AdminLinkButton>
       </AdminPageHeader>
 
-      <AdminToolbarCard>
-        <p className="text-sm text-muted-foreground">Manage top-level categories and subcategories.</p>
-        <AdminLinkButton href="/admin/categories/new" variant="outline">
-          + New Category
-        </AdminLinkButton>
-      </AdminToolbarCard>
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap gap-2">
+          {LEVEL_TABS.map((tab) => {
+            const isActive = level === tab.value;
+
+            return (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => setLevel(tab.value)}
+                className={`${pillRadius} px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+                  isActive
+                    ? "bg-[#16568D] text-white"
+                    : "border border-gray-200 bg-white text-[#333] hover:border-[#16568D]/40"
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <AdminInput
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={`Search ${activeTab?.label.toLowerCase() || "categories"}...`}
+          className="max-w-xs bg-white"
+        />
+      </div>
 
       {error ? <AdminAlert>{error}</AdminAlert> : null}
 
@@ -92,53 +172,99 @@ export default function AdminCategoriesPage() {
       ) : (
         <Card className="shadow-sm">
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Products</TableHead>
-                  <TableHead>Active</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.length === 0 ? (
+            <div className={adminTablePaddingClass}>
+              <Table containerClassName="overflow-x-visible">
+                <TableHeader>
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                      No categories found.{" "}
-                      <Link href="/admin/categories/new" className="font-semibold text-[#16568D] hover:underline">
-                        Add your first category
-                      </Link>
-                    </TableCell>
+                    <TableHead className="pl-0">Name</TableHead>
+                    <TableHead>Slug</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Parent</TableHead>
+                    <TableHead>Products</TableHead>
+                    <TableHead>Active</TableHead>
+                    <TableHead className="pr-0 text-right">Actions</TableHead>
                   </TableRow>
-                ) : (
-                  categories.map((category) => (
-                    <TableRow key={category.id}>
-                      <TableCell className="font-medium text-[#333]">{category.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {category.parentId ? "Subcategory" : "Top-level"}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{category.productsCount ?? 0}</TableCell>
-                      <TableCell>
-                        <AdminStatusBadge active={category.isActive} />
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <AdminTableActions
-                          editHref={`/admin/categories/${category.id}/edit`}
-                          onDelete={() => setDeleteTarget({ id: category.id, name: category.name })}
-                          deleting={deletingId === category.id}
-                          editLabel="Edit category"
-                          deleteLabel="Delete category"
-                        />
+                </TableHeader>
+                <TableBody>
+                  {pageItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                        No categories found.{" "}
+                        <Link href="/admin/categories/new" className="font-semibold text-[#16568D] hover:underline">
+                          Add a category
+                        </Link>
                       </TableCell>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+                  ) : (
+                    pageItems.map((category) => (
+                      <TableRow key={category.id} className="hover:bg-muted/30">
+                        <TableCell className="max-w-[220px] truncate py-2.5 pl-0 font-medium text-[#333]">
+                          {category.name}
+                        </TableCell>
+                        <TableCell className="max-w-[180px] truncate py-2.5 text-muted-foreground">
+                          {category.slug}
+                        </TableCell>
+                        <TableCell className="py-2.5 text-muted-foreground">
+                          {LEVEL_LABELS[category.level] || category.level || "—"}
+                        </TableCell>
+                        <TableCell className="max-w-[160px] truncate py-2.5 text-muted-foreground">
+                          {getParentLabel(category)}
+                        </TableCell>
+                        <TableCell className="py-2.5 text-muted-foreground">{category.productsCount ?? 0}</TableCell>
+                        <TableCell className="py-2.5">
+                          <AdminStatusBadge active={category.isActive} />
+                        </TableCell>
+                        <TableCell className="py-2.5 pr-0 text-right">
+                          <AdminTableActions
+                            editHref={`/admin/categories/${category.id}/edit`}
+                            onDelete={() => setDeleteTarget({ id: category.id, name: category.name })}
+                            deleting={deletingId === category.id}
+                            editLabel="Edit category"
+                            deleteLabel="Delete category"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {filteredCategories.length > PAGE_SIZE ? (
+              <div className={`flex items-center justify-between border-t py-3 ${adminTablePaddingClass}`}>
+                <p className="text-sm text-muted-foreground">
+                  Showing {(page - 1) * PAGE_SIZE + 1}–
+                  {Math.min(page * PAGE_SIZE, filteredCategories.length)} of {filteredCategories.length}
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage((current) => current - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {page} of {totalPages}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage((current) => current + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className={`border-t py-2.5 text-sm text-muted-foreground ${adminTablePaddingClass}`}>
+                {filteredCategories.length} {activeTab?.label.toLowerCase() || "items"}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

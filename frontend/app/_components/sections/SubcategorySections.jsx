@@ -2,6 +2,7 @@ import ListingHero from "@/app/_components/ListingHero";
 import ProductListingSection from "@/app/_components/ProductListingSection";
 import { getBrandBySlug, getCategoryBySlug, getProductsForListing } from "@/lib/api-server";
 import { getCategoryHref } from "@/lib/catalog-urls";
+import { buildListingQueryParams } from "@/lib/listing";
 import { notFound } from "next/navigation";
 import { requireMidCategory, requireProductGroup, requireSubcategory } from "@/lib/category-page";
 
@@ -62,6 +63,10 @@ export async function SubcategoryProductsSection({
     categorySlug,
     subSlug
   );
+  const listingParams = buildListingQueryParams({
+    subcategorySlug: subSlug,
+    brandSlug: brandSlug || undefined,
+  });
   const { products, meta } = await getProductsForListing({
     subcategorySlug: subSlug,
     brandSlug: brandSlug || undefined,
@@ -72,6 +77,8 @@ export async function SubcategoryProductsSection({
       products={products}
       categoryName={subcategory.name}
       resultCount={meta?.total ?? products.length}
+      lastPage={meta?.last_page ?? 1}
+      listingParams={listingParams}
     />
   );
 }

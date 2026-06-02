@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PlaceholderImage from "@/app/_components/PlaceholderImage";
 import { pillRadius } from "@/lib/ui-presets";
 import SectionHeading from "./SectionHeading";
 import { getCategoryHref, appendBrandQuery } from "@/lib/catalog-urls";
@@ -33,8 +34,8 @@ export default function CategorySubcategories({
                 className={`group inline-flex h-14 max-w-full items-center gap-3 ${pillRadius} border border-gray-200 bg-white pr-4 transition-colors hover:border-[#16568D] md:h-16 md:pr-5`}
               >
                 <div className="flex h-full w-14 shrink-0 items-center justify-center rounded-l-lg border-r border-gray-100 bg-[#fafafa] p-2 md:w-16">
-                  <img
-                    src={item.image || "/images/products/bearing.png"}
+                  <PlaceholderImage
+                    src={item.image}
                     alt={item.name}
                     className="max-h-full max-w-full object-contain transition-transform duration-300 group-hover:scale-105"
                   />

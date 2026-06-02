@@ -27,6 +27,7 @@ import {
 import { getQuoteHref } from "@/lib/quote";
 import { buttonRadius, cardRadius, inputRadius, menuRadius } from "@/lib/ui-presets";
 import CompareBar from "./CompareBar";
+import PlaceholderImage from "./PlaceholderImage";
 import StockBadge from "./StockBadge";
 
 const SORT_OPTIONS = [
@@ -43,7 +44,7 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
         <div className="flex items-start gap-4 p-4 lg:w-[72%] lg:border-r lg:border-gray-200">
           <div className={`h-28 w-28 shrink-0 ${cardRadius} border border-gray-200 bg-white p-2`}>
             <Link href={`/product/${product.slug}`}>
-              <img
+              <PlaceholderImage
                 src={product.image}
                 alt={product.name}
                 className="h-full w-full object-contain"
@@ -132,7 +133,7 @@ function ProductGridCard({ product, quantity, onQuantityChange, compared, onComp
   return (
     <article className={`flex h-full flex-col ${cardRadius} border border-gray-200 bg-white p-4`}>
       <Link href={`/product/${product.slug}`} className={`mb-4 flex aspect-square items-center justify-center ${cardRadius} border border-gray-100 bg-[#fafafa] p-4`}>
-        <img src={product.image} alt={product.name} className="max-h-full max-w-full object-contain" />
+        <PlaceholderImage src={product.image} alt={product.name} className="max-h-full max-w-full object-contain" />
       </Link>
       <h3 className="text-[16px] font-bold leading-snug text-[#004b87]">
         <Link href={`/product/${product.slug}`} className="hover:underline">

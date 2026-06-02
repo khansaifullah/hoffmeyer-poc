@@ -1,4 +1,5 @@
 import Link from "next/link";
+import PlaceholderImage from "../_components/PlaceholderImage";
 import Header from "../_components/Header";
 import CompareHero from "../_components/CompareHero";
 import Newsletter from "../_components/Newsletter";
@@ -76,7 +77,7 @@ export default async function ComparePage({ searchParams }) {
                   {products.map((product) => (
                     <th key={product.slug} className="min-w-[220px] px-4 py-4 text-left align-top">
                       <div className={`mb-4 flex h-28 items-center justify-center ${cardRadius} border border-gray-200 bg-white p-3`}>
-                        <img
+                        <PlaceholderImage
                           src={product.image}
                           alt={product.name}
                           className="max-h-full max-w-full object-contain"

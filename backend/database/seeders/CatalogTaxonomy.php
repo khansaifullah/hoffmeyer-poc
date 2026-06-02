@@ -14,7 +14,7 @@ class CatalogTaxonomy
      *     categories: list<array{
      *         name: string,
      *         image?: string,
-     *         subcategories: list<string|array{name: string, description?: string}>
+     *         subcategories: list<string|array{name: string, description?: string, image?: string}>
      *     }>
      * }>
      */
@@ -492,8 +492,8 @@ class CatalogTaxonomy
     }
 
     /**
-     * @param  string|array{name: string, description?: string}  $entry
-     * @return array{name: string, description?: string}
+     * @param  string|array{name: string, description?: string, image?: string}  $entry
+     * @return array{name: string, description?: string, image?: string}
      */
     public static function normalizeSubcategoryEntry(string|array $entry): array
     {

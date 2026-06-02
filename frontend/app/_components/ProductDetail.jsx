@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import PlaceholderImage from "./PlaceholderImage";
 import { formatPrice, getProductSku } from "@/lib/product";
 import { getQuoteHref } from "@/lib/quote";
 import { buttonRadius, cardRadius, inputRadius } from "@/lib/ui-presets";
@@ -15,8 +16,10 @@ export default function ProductDetail({ product }) {
 
   const galleryImages =
     product.images?.length > 0
-      ? product.images.map((image) => image.url)
-      : [product.image, product.image, product.image, product.image];
+      ? product.images.map((image) => image.url).filter(Boolean)
+      : product.image
+        ? [product.image]
+        : [];
   const sku = product.sku || getProductSku(product);
 
   const decreaseQty = () => setQuantity((current) => Math.max(1, current - 1));
@@ -26,29 +29,31 @@ export default function ProductDetail({ product }) {
     <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-2 lg:gap-14">
       <div>
         <div className={`flex aspect-square items-center justify-center ${cardRadius} border border-gray-200 bg-[#f5f5f5] p-10`}>
-          <img
+          <PlaceholderImage
             src={galleryImages[activeImage]}
             alt={product.name}
             className="max-h-full max-w-full object-contain"
           />
         </div>
 
-        <div className="mt-4 grid grid-cols-4 gap-3">
-          {galleryImages.map((image, index) => (
-            <button
-              key={index}
-              type="button"
-              onClick={() => setActiveImage(index)}
-              className={`flex aspect-square items-center justify-center ${cardRadius} border bg-[#f5f5f5] p-3 transition-colors ${
-                activeImage === index
-                  ? "border-[#16568D] ring-1 ring-[#16568D]"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <img src={image} alt="" className="max-h-full max-w-full object-contain" />
-            </button>
-          ))}
-        </div>
+        {galleryImages.length > 1 ? (
+          <div className="mt-4 grid grid-cols-4 gap-3">
+            {galleryImages.map((image, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setActiveImage(index)}
+                className={`flex aspect-square items-center justify-center ${cardRadius} border bg-[#f5f5f5] p-3 transition-colors ${
+                  activeImage === index
+                    ? "border-[#16568D] ring-1 ring-[#16568D]"
+                    : "border-gray-200 hover:border-gray-300"
+                }`}
+              >
+                <PlaceholderImage src={image} alt="" className="max-h-full max-w-full object-contain" />
+              </button>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div>

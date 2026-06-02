@@ -11,6 +11,21 @@ import { getStoredUser, logout } from "@/lib/auth";
 import { AdminConfirmDialog } from "./AdminUi";
 import { Toaster } from "@/components/ui/sonner";
 
+function getAdminPageTitle(pathname) {
+  if (pathname === "/admin") return "Dashboard";
+  if (pathname.startsWith("/admin/products/import")) return "Import Products";
+  if (pathname === "/admin/products/new") return "New Product";
+  if (/^\/admin\/products\/[^/]+\/edit$/.test(pathname)) return "Edit Product";
+  if (pathname.startsWith("/admin/products")) return "Products";
+  if (pathname === "/admin/categories/new") return "New Category";
+  if (/^\/admin\/categories\/[^/]+\/edit$/.test(pathname)) return "Edit Category";
+  if (pathname.startsWith("/admin/categories")) return "Categories";
+  if (pathname === "/admin/brands/new") return "New Brand";
+  if (/^\/admin\/brands\/[^/]+\/edit$/.test(pathname)) return "Edit Brand";
+  if (pathname.startsWith("/admin/brands")) return "Brands";
+  return "Admin";
+}
+
 const navItems = [
   {
     href: "/admin",
@@ -168,7 +183,12 @@ export default function AdminShell({ children }) {
       <div className="ml-64 min-h-screen">
         <header className="sticky top-0 z-20 border-b border-gray-200 bg-white/95 px-8 py-4 backdrop-blur">
           <div className="flex items-center justify-between gap-4">
-            <p className="text-sm font-medium text-muted-foreground">Hoffmeyer B2B Catalog Management</p>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                Catalog Admin
+              </p>
+              <p className="text-sm font-semibold text-[#333]">{getAdminPageTitle(pathname)}</p>
+            </div>
             {user ? (
               <p className="text-sm text-muted-foreground">
                 Signed in as <span className="font-semibold text-[#004b87]">{user.name}</span>
@@ -179,7 +199,7 @@ export default function AdminShell({ children }) {
           </div>
         </header>
 
-        <main className="px-8 py-8">{children}</main>
+        <main className="mx-auto max-w-7xl px-8 py-8">{children}</main>
       </div>
 
       <AdminConfirmDialog

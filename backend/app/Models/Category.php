@@ -159,25 +159,35 @@ class Category extends Model
             return [$this->id];
         }
 
-        $ids = [];
-
         if ($this->isCategory()) {
-            foreach ($this->children as $child) {
-                $ids[] = $child->id;
-            }
+            $this->loadMissing('children');
 
-            return $ids;
+            return $this->children->pluck('id')->all();
         }
 
         $this->loadMissing('children.children');
 
-        foreach ($this->children as $category) {
-            foreach ($category->children as $subcategory) {
-                $ids[] = $subcategory->id;
-            }
+        return $this->children
+            ->flatMap(fn (Category $category) => $category->children->pluck('id'))
+            ->all();
+    }
+
+    /**
+     * @param  Builder<Product>  $query
+     */
+    public function applyProductFilter(Builder $query): Builder
+    {
+        $subcategoryIds = $this->subcategoryIds();
+
+        if ($subcategoryIds === []) {
+            return $query->whereRaw('0 = 1');
         }
 
-        return $ids;
+        return $query->where(function (Builder $builder) use ($subcategoryIds) {
+            $builder
+                ->whereHas('categories', fn (Builder $relation) => $relation->whereIn('categories.id', $subcategoryIds))
+                ->orWhereIn('category_id', $subcategoryIds);
+        });
     }
 
     public function catalogPath(): string

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PencilIcon, Trash2Icon } from "lucide-react";
+import { ArrowRightIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,13 +37,61 @@ export function adminToastError(title, description) {
 
 export function AdminPageHeader({ title, description, children }) {
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#333]">{title}</h1>
-        {description ? <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{description}</p> : null}
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+      <div className="min-w-0">
+        <h1 className="text-2xl font-bold tracking-tight text-[#004b87]">{title}</h1>
+        {description ? (
+          <p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-muted-foreground">{description}</p>
+        ) : null}
       </div>
-      {children ? <div className="flex flex-wrap gap-2">{children}</div> : null}
+      {children ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">{children}</div>
+      ) : null}
     </div>
+  );
+}
+
+export function AdminStatCard({ href, label, value, icon: Icon, accent = "bg-[#16568D]/10 text-[#16568D]" }) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all hover:border-[#16568D]/40 hover:shadow-md"
+    >
+      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${accent}`}>
+        {Icon ? <Icon className="h-5 w-5" /> : null}
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+        <p className="mt-0.5 text-2xl font-bold tabular-nums text-[#004b87]">{value}</p>
+      </div>
+      <ArrowRightIcon className="ml-auto h-4 w-4 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-[#16568D]" />
+    </Link>
+  );
+}
+
+export function AdminActionCard({ href, title, description, icon: Icon, primary = false }) {
+  return (
+    <Link
+      href={href}
+      className={`group flex items-start gap-3 rounded-xl border p-4 transition-all ${
+        primary
+          ? "border-[#16568D]/30 bg-[#16568D]/5 hover:border-[#16568D] hover:bg-[#16568D]/10"
+          : "border-gray-200 bg-white hover:border-[#16568D]/40 hover:shadow-sm"
+      }`}
+    >
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+          primary ? "bg-[#16568D] text-white" : "bg-[#f4f6f8] text-[#16568D]"
+        }`}
+      >
+        {Icon ? <Icon className="h-5 w-5" /> : null}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold text-[#333] group-hover:text-[#004b87]">{title}</p>
+        {description ? <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{description}</p> : null}
+      </div>
+      <ArrowRightIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground/40 group-hover:text-[#16568D]" />
+    </Link>
   );
 }
 
@@ -79,13 +127,15 @@ export function AdminFormCard({ title, description, children, className, content
 
 export function AdminToolbarCard({ children, className }) {
   return (
-    <Card className={cn("mt-6 shadow-sm", className)}>
-      <CardContent className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between">
+    <Card className={cn("shadow-sm", className)}>
+      <CardContent className="flex flex-col gap-4 px-5 py-3 md:flex-row md:items-center md:justify-between">
         {children}
       </CardContent>
     </Card>
   );
 }
+
+export const adminTablePaddingClass = "px-5";
 
 export function AdminField({ label, htmlFor, children, className }) {
   return (

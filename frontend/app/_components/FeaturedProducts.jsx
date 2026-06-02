@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "motion/react";
+import PlaceholderImage from "@/app/_components/PlaceholderImage";
 import {
   cardHoverMotion,
   fadeUpTransition,
@@ -58,7 +59,7 @@ export default function FeaturedProducts({
                     className={`group flex aspect-square cursor-pointer flex-col items-center justify-between overflow-hidden ${squareCardRadius} border border-gray-200 bg-white p-4 transition-all duration-300 hover:border-[#16568D] hover:shadow-lg md:p-3`}
                   >
                     <div className="flex min-h-0 w-full flex-1 items-center justify-center p-2">
-                      <img
+                      <PlaceholderImage
                         src={product.image}
                         alt={product.name}
                         className="max-h-[90%] max-w-[90%] object-contain transition-transform duration-300 group-hover:scale-105"
