@@ -57,7 +57,9 @@ export function parsePrice(price) {
 
 export function formatPrice(price) {
   if (typeof price === "string" && price.startsWith("$")) return price;
-  return `$${parsePrice(price).toFixed(2)}`;
+  const value = parsePrice(price);
+  if (value === 0) return "Quote";
+  return `$${value.toFixed(2)}`;
 }
 
 export function getProductSku(product) {

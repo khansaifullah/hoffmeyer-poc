@@ -222,67 +222,73 @@ const Header = () => {
         />
       )}
 
-      {/* Mobile Sidebar */}
-      <div 
-        className={`fixed top-0 left-0 h-full w-[80%] max-w-sm bg-white z-50 transform transition-transform duration-300 ease-in-out flex flex-col font-sans ${
+      {/* Mobile Sidebar — single scroll area; no nested overflow panels */}
+      <div
+        className={`fixed top-0 left-0 z-50 flex h-dvh w-[85%] max-w-[320px] flex-col bg-white font-sans shadow-xl transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3">
           <Link href="/" onClick={() => setIsMenuOpen(false)} className="cursor-pointer">
-            <img src="/images/brand/logo.png" alt="Hoffmeyer" className="h-[30px] object-contain" />
+            <img src="/images/brand/logo.png" alt="Hoffmeyer" className="h-[28px] object-contain" />
           </Link>
-          <button 
-            className="text-gray-500 hover:text-gray-800 p-2"
+          <button
+            type="button"
+            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
             onClick={() => setIsMenuOpen(false)}
+            aria-label="Close menu"
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
 
-        <div className="flex flex-col py-4 overflow-y-auto">
-          <nav className="flex flex-col px-6 gap-2 text-[18px] font-bold text-[#333]">
-            
-            <MobileCategoriesNav
-              productGroups={productGroups}
-              onNavigate={() => setIsMenuOpen(false)}
-            />
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain [-webkit-overflow-scrolling:touch]">
+          <nav className="divide-y divide-gray-100 px-4 py-2">
+            <div className="py-1">
+              <MobileCategoriesNav
+                productGroups={productGroups}
+                onNavigate={() => setIsMenuOpen(false)}
+              />
+            </div>
 
-            <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Brands</a>
-            <Link href="/locations" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>Locations</Link>
-            <Link href="/resources" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>Resources</Link>
-            <Link href="/about" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2" onClick={() => setIsMenuOpen(false)}>About Us</Link>
-            <Link
-              href="/login"
-              className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Login
+            <Link href="/locations" className="block py-3 text-[16px] font-semibold text-[#333] hover:text-[#004b87]" onClick={() => setIsMenuOpen(false)}>
+              Locations
             </Link>
-            <a href="#" className="hover:text-[#004b87] transition-colors border-b border-gray-100 py-2">Quick Order</a>
+            <Link href="/resources" className="block py-3 text-[16px] font-semibold text-[#333] hover:text-[#004b87]" onClick={() => setIsMenuOpen(false)}>
+              Resources
+            </Link>
+            <Link href="/about" className="block py-3 text-[16px] font-semibold text-[#333] hover:text-[#004b87]" onClick={() => setIsMenuOpen(false)}>
+              About Us
+            </Link>
+            <Link href="/quote" className="block py-3 text-[16px] font-semibold text-[#333] hover:text-[#004b87]" onClick={() => setIsMenuOpen(false)}>
+              Request a Quote
+            </Link>
           </nav>
         </div>
 
-        <div className="mt-auto p-6 bg-[#f8f8f8] border-t border-gray-200">
-          <div className="flex flex-col gap-3">
+        <div className="shrink-0 border-t border-gray-200 bg-[#f8f8f8] p-4">
+          <div className="flex gap-2">
             <Link
               href="/login"
               onClick={() => setIsMenuOpen(false)}
-              className={`w-full border border-[#16568D] bg-white text-[#16568D] font-bold py-3 transition-colors hover:bg-[#16568D] hover:text-white text-center ${buttonRadius}`}
+              className={`flex-1 border border-[#16568D] bg-white py-2.5 text-center text-[14px] font-bold text-[#16568D] transition-colors hover:bg-[#16568D] hover:text-white ${buttonRadius}`}
             >
               Login
             </Link>
             <Link
               href="/register"
               onClick={() => setIsMenuOpen(false)}
-              className={`w-full bg-[#16568D] text-white font-bold py-3 hover:bg-[#124570] transition-colors text-center ${buttonRadius}`}
+              className={`flex-1 bg-[#16568D] py-2.5 text-center text-[14px] font-bold text-white transition-colors hover:bg-[#124570] ${buttonRadius}`}
             >
               Register
             </Link>
           </div>
-          <div className="mt-6 text-center text-[18px] font-extrabold text-[#16568D] tracking-tight">
+          <a
+            href="tel:18003502358"
+            className="mt-3 block text-center text-[16px] font-extrabold tracking-tight text-[#16568D]"
+          >
             (800) 350-2358
-          </div>
+          </a>
         </div>
       </div>
     </>

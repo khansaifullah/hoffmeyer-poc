@@ -12,7 +12,7 @@ import {
   PlusIcon,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { fetchBrands, fetchCategories, fetchProducts } from "@/lib/api";
+import { fetchAdminCategories, fetchBrands, fetchProducts } from "@/lib/api";
 import { AdminDashboardSkeleton } from "./_components/AdminSkeletons";
 import {
   AdminActionCard,
@@ -50,22 +50,31 @@ const quickActions = [
 ];
 
 export default function AdminDashboardPage() {
-  const [stats, setStats] = useState({ categories: 0, subcategories: 0, brands: 0, products: 0 });
+  const [stats, setStats] = useState({
+    productGroups: 0,
+    categories: 0,
+    subcategories: 0,
+    brands: 0,
+    products: 0,
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [categories, brands, productResult] = await Promise.all([
-          fetchCategories(),
+        const [productGroups, categories, subcategories, brands, productResult] = await Promise.all([
+          fetchAdminCategories({ level: "product_group" }),
+          fetchAdminCategories({ level: "category" }),
+          fetchAdminCategories({ level: "subcategory" }),
           fetchBrands(),
           fetchProducts({ per_page: 1 }),
         ]);
 
         setStats({
-          categories: categories.filter((category) => !category.parentId).length,
-          subcategories: categories.filter((category) => category.parentId).length,
+          productGroups: productGroups.length,
+          categories: categories.length,
+          subcategories: subcategories.length,
           brands: brands.length,
           products: productResult.meta?.total ?? 0,
         });
@@ -93,19 +102,25 @@ export default function AdminDashboardPage() {
       {error ? <AdminAlert>{error}</AdminAlert> : null}
 
       <section aria-label="Catalog overview">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <AdminStatCard
-            href="/admin/categories"
+            href="/admin/categories?level=product_group"
             label="Product groups"
-            value={stats.categories.toLocaleString()}
+            value={stats.productGroups.toLocaleString()}
             icon={FolderTreeIcon}
           />
           <AdminStatCard
-            href="/admin/categories"
+            href="/admin/categories?level=category"
+            label="Categories"
+            value={stats.categories.toLocaleString()}
+            icon={LayersIcon}
+            accent="bg-[#40A8F3]/15 text-[#16568D]"
+          />
+          <AdminStatCard
+            href="/admin/categories?level=subcategory"
             label="Subcategories"
             value={stats.subcategories.toLocaleString()}
             icon={LayersIcon}
-            accent="bg-[#40A8F3]/15 text-[#16568D]"
           />
           <AdminStatCard
             href="/admin/brands"
@@ -146,7 +161,9 @@ export default function AdminDashboardPage() {
             <CardContent className="space-y-2 p-4 sm:p-5">
               {[
                 { href: "/admin/products", label: "All products", count: stats.products },
-                { href: "/admin/categories", label: "Category tree", count: stats.categories + stats.subcategories },
+                { href: "/admin/categories?level=product_group", label: "Product groups", count: stats.productGroups },
+                { href: "/admin/categories?level=category", label: "Categories", count: stats.categories },
+                { href: "/admin/categories?level=subcategory", label: "Subcategories", count: stats.subcategories },
                 { href: "/admin/brands", label: "Brands", count: stats.brands },
               ].map((item) => (
                 <Link

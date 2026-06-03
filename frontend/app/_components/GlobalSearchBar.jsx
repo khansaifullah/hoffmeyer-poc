@@ -66,6 +66,42 @@ function ResultSection({ title, items, onNavigate }) {
   );
 }
 
+function lockPageScroll() {
+  const scrollY = window.scrollY;
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
+  document.body.style.position = "fixed";
+  document.body.style.top = `-${scrollY}px`;
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.width = "100%";
+
+  return () => {
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.width = "";
+    window.scrollTo(0, scrollY);
+  };
+}
+
+function handleResultsWheel(event) {
+  const panel = event.currentTarget;
+  const { scrollTop, scrollHeight, clientHeight } = panel;
+  const delta = event.deltaY;
+  const atTop = scrollTop <= 0;
+  const atBottom = scrollTop + clientHeight >= scrollHeight - 1;
+
+  event.stopPropagation();
+
+  if ((delta < 0 && atTop) || (delta > 0 && atBottom)) {
+    event.preventDefault();
+  }
+}
+
 export default function GlobalSearchBar({ variant = "desktop" }) {
   const listboxId = useId();
   const rootRef = useRef(null);
@@ -75,8 +111,11 @@ export default function GlobalSearchBar({ variant = "desktop" }) {
   const [open, setOpen] = useState(false);
 
   const isMobile = variant === "mobile";
+  const trimmedQuery = query.trim();
+  const showResults = open && trimmedQuery.length >= 2;
   const totalResults =
     results.products.length + results.categories.length + results.brands.length;
+  const resultsMaxHeight = isMobile ? "max-h-80" : "max-h-96";
 
   useEffect(() => {
     if (query.trim().length < 2) {
@@ -102,14 +141,27 @@ export default function GlobalSearchBar({ variant = "desktop" }) {
   }, [query]);
 
   useEffect(() => {
+    if (!showResults) return;
+    return lockPageScroll();
+  }, [showResults]);
+
+  useEffect(() => {
     function handleClickOutside(event) {
       if (rootRef.current && !rootRef.current.contains(event.target)) {
         setOpen(false);
       }
     }
 
+    function handleEscape(event) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   function handleNavigate() {
@@ -150,24 +202,29 @@ export default function GlobalSearchBar({ variant = "desktop" }) {
         </div>
       </div>
 
-      {open && query.trim().length >= 2 && (
+      {showResults && (
         <div
           id={listboxId}
-          className={`absolute z-50 mt-2 overflow-hidden ${menuRadius} border border-gray-200 bg-white shadow-[0_8px_20px_rgba(0,0,0,0.12)] ${
-            isMobile ? "left-0 right-0 max-h-80 overflow-y-auto" : "left-0 right-0 max-h-96 overflow-y-auto"
-          }`}
+          className={`absolute z-50 mt-2 left-0 right-0 ${menuRadius} border border-gray-200 bg-white shadow-[0_8px_20px_rgba(0,0,0,0.12)]`}
         >
-          {loading ? (
-            <p className="px-4 py-4 text-[14px] text-gray-500">Searching...</p>
-          ) : totalResults === 0 ? (
-            <p className="px-4 py-4 text-[14px] text-gray-500">No results for &ldquo;{query}&rdquo;</p>
-          ) : (
-            <>
-              <ResultSection title="Products" items={results.products} onNavigate={handleNavigate} />
-              <ResultSection title="Categories" items={results.categories} onNavigate={handleNavigate} />
-              <ResultSection title="Brands" items={results.brands} onNavigate={handleNavigate} />
-            </>
-          )}
+          <div
+            data-lenis-prevent
+            onWheel={handleResultsWheel}
+            onTouchMove={(event) => event.stopPropagation()}
+            className={`${resultsMaxHeight} overflow-y-auto overscroll-y-contain scroll-smooth [scrollbar-gutter:stable] [-webkit-overflow-scrolling:touch] [transform:translateZ(0)] will-change-scroll`}
+          >
+            {loading ? (
+              <p className="px-4 py-4 text-[14px] text-gray-500">Searching...</p>
+            ) : totalResults === 0 ? (
+              <p className="px-4 py-4 text-[14px] text-gray-500">No results for &ldquo;{query}&rdquo;</p>
+            ) : (
+              <>
+                <ResultSection title="Products" items={results.products} onNavigate={handleNavigate} />
+                <ResultSection title="Categories" items={results.categories} onNavigate={handleNavigate} />
+                <ResultSection title="Brands" items={results.brands} onNavigate={handleNavigate} />
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>

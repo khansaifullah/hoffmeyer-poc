@@ -308,6 +308,7 @@ export async function deleteCategory(id) {
 export function categoryToPayload(category) {
   return {
     parent_id: category.parent_id ? Number(category.parent_id) : null,
+    level: category.level || undefined,
     name: category.name,
     slug: category.slug || "",
     image: category.image || "",

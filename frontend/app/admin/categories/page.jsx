@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -49,18 +50,62 @@ function getParentLabel(category) {
     return "—";
   }
 
-  return breadcrumb[breadcrumb.length - 2]?.name || "—";
+  return breadcrumb
+    .slice(0, -1)
+    .map((node) => node.name)
+    .join(" › ");
 }
 
 export default function AdminCategoriesPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const levelParam = searchParams.get("level");
+  const initialLevel = LEVEL_TABS.some((tab) => tab.value === levelParam)
+    ? levelParam
+    : "product_group";
+
   const [categories, setCategories] = useState([]);
-  const [level, setLevel] = useState("product_group");
+  const [level, setLevel] = useState(initialLevel);
+  const [tabCounts, setTabCounts] = useState({ product_group: 0, category: 0, subcategory: 0 });
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  useEffect(() => {
+    if (LEVEL_TABS.some((tab) => tab.value === levelParam)) {
+      setLevel(levelParam);
+    }
+  }, [levelParam]);
+
+  useEffect(() => {
+    let active = true;
+
+    Promise.all(
+      LEVEL_TABS.map(async (tab) => {
+        const data = await fetchAdminCategories({ level: tab.value });
+        return [tab.value, data.length];
+      })
+    )
+      .then((entries) => {
+        if (!active) return;
+        setTabCounts(Object.fromEntries(entries));
+      })
+      .catch(() => {
+        if (active) setTabCounts({ product_group: 0, category: 0, subcategory: 0 });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function changeLevel(nextLevel) {
+    setLevel(nextLevel);
+    router.replace(`/admin/categories?level=${nextLevel}`);
+  }
 
   useEffect(() => {
     async function load() {
@@ -128,10 +173,12 @@ export default function AdminCategoriesPage() {
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Categories"
-        description={`Browse and manage ${activeTab?.label.toLowerCase() || "categories"} in the catalog.`}
+        title="Catalog taxonomy"
+        description="Manage all product groups, categories, and subcategories in the three-level Hoffmeyer catalog."
       >
-        <AdminLinkButton href="/admin/categories/new">+ Add Category</AdminLinkButton>
+        <AdminLinkButton href={`/admin/categories/new?level=${level}`}>
+          + Add {activeTab?.label.replace(/s$/, "") || "item"}
+        </AdminLinkButton>
       </AdminPageHeader>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -143,7 +190,7 @@ export default function AdminCategoriesPage() {
               <button
                 key={tab.value}
                 type="button"
-                onClick={() => setLevel(tab.value)}
+                onClick={() => changeLevel(tab.value)}
                 className={`${pillRadius} px-3 py-1.5 text-[13px] font-semibold transition-colors ${
                   isActive
                     ? "bg-[#16568D] text-white"
@@ -151,6 +198,11 @@ export default function AdminCategoriesPage() {
                 }`}
               >
                 {tab.label}
+                <span
+                  className={`ml-1.5 tabular-nums ${isActive ? "text-white/85" : "text-gray-400"}`}
+                >
+                  ({tabCounts[tab.value] ?? "…"})
+                </span>
               </button>
             );
           })}

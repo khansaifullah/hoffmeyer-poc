@@ -5,16 +5,10 @@ namespace Database\Seeders;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
-use App\Models\ProductImage;
-use App\Models\ProductSpec;
 use Illuminate\Database\Seeder;
 
 class CatalogSeeder extends Seeder
 {
-    private const MIN_PRODUCTS_PER_SUBCATEGORY = 5;
-
-    private int $itemCounter = 1326180;
-
     public function run(): void
     {
         $this->resetCatalog();
@@ -133,120 +127,8 @@ class CatalogSeeder extends Seeder
 
     private function seedProducts(array $subcategoryIds, array $brandIds): void
     {
-        $explicitProducts = CatalogMockData::subcategoryProducts();
+        unset($subcategoryIds, $brandIds);
 
-        foreach ($subcategoryIds as $subcategorySlug => $categoryId) {
-            $subcategory = Category::query()->with('parent.parent')->find($categoryId);
-
-            if (! $subcategory) {
-                continue;
-            }
-
-            $categoryLabel = collect([
-                $subcategory->parent?->parent?->name,
-                $subcategory->parent?->name,
-                $subcategory->name,
-            ])->filter()->implode(' / ');
-
-            $image = $subcategory->image
-                ?: $subcategory->parent?->parent?->image
-                ?: '/images/products/bearing.png';
-
-            $products = $explicitProducts[$subcategorySlug] ?? [];
-            $seededCount = 0;
-
-            foreach ($products as $index => $productData) {
-                $this->createProduct($categoryId, $productData, $categoryLabel, $brandIds, $index);
-                $seededCount++;
-            }
-
-            $needed = self::MIN_PRODUCTS_PER_SUBCATEGORY - $seededCount;
-
-            if ($needed > 0) {
-                $generatedProducts = CatalogMockData::defaultProductsForSubcategory(
-                    $subcategory->name,
-                    $subcategorySlug,
-                    $image,
-                    $needed,
-                    $seededCount
-                );
-
-                foreach ($generatedProducts as $index => $productData) {
-                    $this->createProduct(
-                        $categoryId,
-                        $productData,
-                        $categoryLabel,
-                        $brandIds,
-                        $seededCount + $index
-                    );
-                }
-            }
-        }
-    }
-
-    private function createProduct(
-        int $categoryId,
-        array $productData,
-        string $categoryLabel,
-        array $brandIds,
-        int $sortOrder
-    ): void {
-        $slug = $productData['slug'] ?? CatalogMockData::slugify($productData['name']);
-        $cleanName = str_replace(['®', '™'], '', $productData['name']);
-        $description = sprintf('%s for %s applications.', $cleanName, $categoryLabel);
-        $material = CatalogMockData::inferMaterial($productData['name'], $description);
-        $mfrNumber = strtoupper(substr(str_replace('-', '', $slug), 0, 10));
-        $this->itemCounter++;
-        $itemNumber = (string) $this->itemCounter;
-        $brandId = null;
-
-        if (! empty($productData['brand'])) {
-            $brandKey = strtolower($productData['brand']);
-            $brandId = $brandIds[$brandKey] ?? null;
-        }
-
-        $isFeatured = in_array($slug, CatalogMockData::HOME_FEATURED_PRODUCT_SLUGS, true);
-        $availabilityStatus = $sortOrder === 4 ? 'factory_order' : 'in_stock';
-
-        $product = Product::query()->updateOrCreate(
-            ['slug' => $slug],
-            [
-                'category_id' => $categoryId,
-                'brand_id' => $brandId,
-                'name' => $productData['name'],
-                'price' => $productData['price'],
-                'image' => $productData['image'],
-                'sku' => sprintf('HOFF-%s-%s', $itemNumber, strtoupper(substr($slug, 0, 8))),
-                'item_number' => $itemNumber,
-                'mfr_number' => $mfrNumber,
-                'material' => $material,
-                'description' => $description,
-                'in_stock' => true,
-                'availability_status' => $availabilityStatus,
-                'is_featured' => $isFeatured,
-                'sort_order' => $sortOrder,
-            ]
-        );
-
-        $product->images()->delete();
-        foreach (range(0, 3) as $imageIndex) {
-            ProductImage::query()->create([
-                'product_id' => $product->id,
-                'url' => $productData['image'],
-                'sort_order' => $imageIndex,
-            ]);
-        }
-
-        $product->specs()->delete();
-        foreach (CatalogMockData::buildSpecs($material) as $specIndex => $spec) {
-            ProductSpec::query()->create([
-                'product_id' => $product->id,
-                'label' => $spec['label'],
-                'value' => $spec['value'],
-                'sort_order' => $specIndex,
-            ]);
-        }
-
-        $product->categories()->syncWithoutDetaching([$categoryId]);
+        $this->call(SupplierProductsSeeder::class);
     }
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   categoryToPayload,
@@ -22,6 +22,12 @@ import {
   adminToastError,
   adminToastSuccess,
 } from "./AdminUi";
+
+const CATALOG_LEVELS = [
+  { value: "product_group", label: "Product group" },
+  { value: "category", label: "Category" },
+  { value: "subcategory", label: "Subcategory" },
+];
 
 const defaultForm = {
   parent_id: "",
@@ -49,23 +55,95 @@ function categoryToForm(category) {
   };
 }
 
+function inferCatalogLevel(category) {
+  if (!category) return "product_group";
+  if (category.level) return category.level;
+  if (!category.parentId) return "product_group";
+  return "subcategory";
+}
+
+function formatParentOption(category, catalogLevel) {
+  const breadcrumb = category.breadcrumb || [];
+
+  if (catalogLevel === "category") {
+    return category.name;
+  }
+
+  if (breadcrumb.length >= 2) {
+    return `${breadcrumb[0].name} › ${category.name}`;
+  }
+
+  return category.name;
+}
+
 export default function CategoryForm({ categoryId = null, initialCategory = null }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const defaultLevelParam = searchParams.get("level");
+
   const [form, setForm] = useState(categoryToForm(initialCategory));
+  const [catalogLevel, setCatalogLevel] = useState(() => {
+    if (initialCategory) return inferCatalogLevel(initialCategory);
+    if (["product_group", "category", "subcategory"].includes(defaultLevelParam || "")) {
+      return defaultLevelParam;
+    }
+    return "product_group";
+  });
   const [parentOptions, setParentOptions] = useState([]);
   const [optionsLoading, setOptionsLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
 
+  const parentLevel = catalogLevel === "category" ? "product_group" : "category";
+  const showParentField = catalogLevel !== "product_group";
+
   useEffect(() => {
-    fetchAdminCategories({ top_level: true })
-      .then(setParentOptions)
-      .catch(() => setParentOptions([]))
-      .finally(() => setOptionsLoading(false));
-  }, []);
+    if (!showParentField) {
+      setParentOptions([]);
+      setOptionsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setOptionsLoading(true);
+
+    fetchAdminCategories({ level: parentLevel })
+      .then((categories) => {
+        if (!active) return;
+        setParentOptions(categories);
+      })
+      .catch(() => {
+        if (active) setParentOptions([]);
+      })
+      .finally(() => {
+        if (active) setOptionsLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [parentLevel, showParentField]);
+
+  const parentSelectOptions = useMemo(
+    () =>
+      parentOptions.map((category) => ({
+        value: String(category.id),
+        label: formatParentOption(category, catalogLevel),
+      })),
+    [parentOptions, catalogLevel]
+  );
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
+  }
+
+  function handleLevelChange(level) {
+    setCatalogLevel(level);
+    if (level === "product_group") {
+      updateField("parent_id", "");
+    } else {
+      updateField("parent_id", "");
+    }
   }
 
   async function handleSubmit(event) {
@@ -73,8 +151,23 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
     setSaving(true);
     setError("");
 
+    if (showParentField && !form.parent_id) {
+      const message =
+        catalogLevel === "category"
+          ? "Select a product group as the parent."
+          : "Select a category as the parent.";
+      setError(message);
+      adminToastError("Missing parent.", message);
+      setSaving(false);
+      return;
+    }
+
     try {
-      const payload = categoryToPayload(form);
+      const payload = {
+        ...categoryToPayload(form),
+        parent_id: showParentField ? Number(form.parent_id) : null,
+        level: catalogLevel,
+      };
 
       if (categoryId) {
         await updateCategory(categoryId, payload);
@@ -84,7 +177,7 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
         adminToastSuccess("Category created.", `"${form.name}" was added to the catalog.`);
       }
 
-      router.push("/admin/categories");
+      router.push(`/admin/categories?level=${catalogLevel}`);
       router.refresh();
     } catch (err) {
       const message = err.message || "Failed to save category";
@@ -95,13 +188,51 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
     }
   }
 
-  if (optionsLoading) {
-    return <AdminFormSkeleton fields={6} />;
+  if (optionsLoading && showParentField) {
+    return <AdminFormSkeleton fields={7} />;
   }
+
+  const levelLabel = CATALOG_LEVELS.find((item) => item.value === catalogLevel)?.label || "Category";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error ? <AdminAlert>{error}</AdminAlert> : null}
+
+      <AdminField label="Catalog level" htmlFor="category-level">
+        <AdminSelect
+          id="category-level"
+          value={catalogLevel}
+          onValueChange={handleLevelChange}
+          disabled={Boolean(categoryId)}
+          options={CATALOG_LEVELS}
+        />
+        {categoryId ? (
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            Level is fixed after creation. Change the parent to move within the tree.
+          </p>
+        ) : (
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            Product group → Category → Subcategory (three-level catalog tree).
+          </p>
+        )}
+      </AdminField>
+
+      {showParentField ? (
+        <AdminField
+          label={catalogLevel === "category" ? "Parent product group" : "Parent category"}
+          htmlFor="category-parent"
+        >
+          <AdminSelect
+            id="category-parent"
+            value={form.parent_id}
+            onValueChange={(value) => updateField("parent_id", value)}
+            placeholder={
+              catalogLevel === "category" ? "Select product group" : "Select category"
+            }
+            options={parentSelectOptions}
+          />
+        </AdminField>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <AdminField label="Name" htmlFor="category-name">
@@ -125,28 +256,13 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
         </AdminField>
       </div>
 
-      <AdminField label="Parent Category" htmlFor="category-parent">
-        <AdminSelect
-          id="category-parent"
-          value={form.parent_id}
-          onValueChange={(value) => updateField("parent_id", value)}
-          placeholder="Top-level category"
-          options={[
-            { value: "", label: "Top-level category" },
-            ...parentOptions.map((category) => ({
-              value: String(category.id),
-              label: category.name,
-            })),
-          ]}
-        />
-      </AdminField>
-
       <AdminField label="Image URL" htmlFor="category-image">
         <AdminInput
           id="category-image"
           type="text"
           value={form.image}
           onChange={(event) => updateField("image", event.target.value)}
+          placeholder="Leave blank for grey logo placeholder on storefront"
         />
       </AdminField>
 
@@ -159,14 +275,16 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
         />
       </AdminField>
 
-      <AdminField label="Hero Description" htmlFor="category-hero-description">
-        <AdminTextarea
-          id="category-hero-description"
-          rows={3}
-          value={form.hero_description}
-          onChange={(event) => updateField("hero_description", event.target.value)}
-        />
-      </AdminField>
+      {catalogLevel !== "subcategory" ? (
+        <AdminField label="Hero Description" htmlFor="category-hero-description">
+          <AdminTextarea
+            id="category-hero-description"
+            rows={3}
+            value={form.hero_description}
+            onChange={(event) => updateField("hero_description", event.target.value)}
+          />
+        </AdminField>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <AdminField label="Sort Order" htmlFor="category-sort-order">
@@ -191,9 +309,9 @@ export default function CategoryForm({ categoryId = null, initialCategory = null
 
       <AdminFormActions>
         <AdminPrimaryButton type="submit" disabled={saving}>
-          {saving ? "Saving..." : categoryId ? "Update Category" : "Create Category"}
+          {saving ? "Saving..." : categoryId ? `Update ${levelLabel}` : `Create ${levelLabel}`}
         </AdminPrimaryButton>
-        <AdminLinkButton href="/admin/categories" variant="ghost">
+        <AdminLinkButton href={`/admin/categories?level=${catalogLevel}`} variant="ghost">
           Cancel
         </AdminLinkButton>
       </AdminFormActions>

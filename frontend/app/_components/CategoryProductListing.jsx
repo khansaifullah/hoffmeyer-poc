@@ -38,11 +38,14 @@ const SORT_OPTIONS = [
 ];
 
 function ProductListRow({ product, quantity, onQuantityChange, compared, onCompareChange }) {
+  const priceLabel = formatPrice(product.price);
+  const showEachSuffix = priceLabel !== "Quote";
+
   return (
-    <article className={`${cardRadius} overflow-hidden border border-gray-200 bg-white`}>
+    <article className={`${cardRadius} border border-gray-200 bg-white`}>
       <div className="flex flex-col lg:flex-row lg:items-stretch">
-        <div className="flex items-start gap-4 p-4 lg:w-[72%] lg:border-r lg:border-gray-200">
-          <div className={`h-28 w-28 shrink-0 ${cardRadius} border border-gray-200 bg-white p-2`}>
+        <div className="flex gap-3 p-3 sm:gap-4 sm:p-4 lg:w-[72%] lg:border-r lg:border-gray-200">
+          <div className={`h-20 w-20 shrink-0 sm:h-24 sm:w-24 lg:h-28 lg:w-28 ${cardRadius} border border-gray-200 bg-[#f5f5f5] p-1.5`}>
             <Link href={`/product/${product.slug}`}>
               <PlaceholderImage
                 src={product.image}
@@ -53,69 +56,61 @@ function ProductListRow({ product, quantity, onQuantityChange, compared, onCompa
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="text-[18px] font-bold leading-snug text-[#004b87]">
+            <h3 className="text-[15px] font-bold leading-snug text-[#004b87] sm:text-[17px] lg:text-[18px]">
               <Link href={`/product/${product.slug}`} className="hover:underline">
                 {product.name}
               </Link>
             </h3>
-            <p className="mt-1 text-[14px] leading-relaxed text-gray-700">
+            <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-gray-600 sm:line-clamp-none sm:text-[14px] lg:text-gray-700">
               {product.description}
             </p>
-            <div className="mt-3 space-y-0.5 text-[13px] text-gray-600">
-              <p>
-                <span className="font-semibold uppercase tracking-wide text-gray-500">
-                  Hoffmeyer Item #
-                </span>{" "}
-                {product.itemNumber}
-              </p>
-              <p>
-                <span className="font-semibold uppercase tracking-wide text-gray-500">
-                  MFR #
-                </span>{" "}
-                {product.mfrNumber}
-              </p>
-            </div>
+            <p className="mt-2 text-[12px] text-gray-500">
+              <span className="font-semibold uppercase tracking-wide">Item #</span> {product.itemNumber}
+              <span className="mx-1.5 text-gray-300">·</span>
+              <span className="font-semibold uppercase tracking-wide">MFR #</span> {product.mfrNumber}
+            </p>
           </div>
         </div>
 
-        <div className="flex flex-col justify-between gap-4 border-t border-gray-200 p-4 lg:w-[28%] lg:border-t-0">
-          <div>
+        <div className="flex flex-col gap-3 border-t border-gray-200 px-3 pb-3 pt-3 sm:px-4 sm:pb-4 lg:w-[28%] lg:justify-between lg:border-t-0 lg:pt-4">
+          <div className="flex items-center justify-between gap-3 lg:block">
             <div className="flex items-baseline gap-1">
-              <span className="text-[28px] font-bold leading-none text-[#111]">
-                {formatPrice(product.price)}
+              <span className="text-[22px] font-bold leading-none text-[#111] sm:text-[26px] lg:text-[28px]">
+                {priceLabel}
               </span>
-              <span className="text-[14px] text-gray-500">/each</span>
+              {showEachSuffix && <span className="text-[13px] text-gray-500">/each</span>}
             </div>
             <StockBadge inStock={product.inStock} factoryOrder={product.factoryOrder} />
           </div>
 
-          <div className="flex items-center gap-3">
-            <label className="text-[13px] font-semibold uppercase tracking-wide text-gray-500">
-              Qty
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={quantity}
-              onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))}
-              className={`h-9 w-16 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87] ${inputRadius}`}
-            />
+          <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
+              <label className="text-[12px] font-semibold uppercase tracking-wide text-gray-500">
+                Qty
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={quantity}
+                onChange={(event) => onQuantityChange(Math.max(1, Number(event.target.value) || 1))}
+                className={`h-10 w-14 border border-gray-300 px-2 text-center text-[14px] outline-none focus:border-[#004b87] ${inputRadius}`}
+              />
+            </div>
+            <Link
+              href={getQuoteHref({
+                productSlug: product.slug,
+                productName: product.name,
+                quantity,
+              })}
+              className={`inline-flex h-10 min-w-0 flex-1 items-center justify-center bg-[#004b87] px-3 text-[14px] font-bold text-white transition-colors hover:bg-[#003a63] sm:h-11 sm:text-[15px] ${buttonRadius}`}
+            >
+              Request a Quote
+            </Link>
           </div>
-
-          <Link
-            href={getQuoteHref({
-              productSlug: product.slug,
-              productName: product.name,
-              quantity,
-            })}
-            className={`inline-flex h-11 w-full items-center justify-center bg-[#004b87] text-[15px] font-bold text-white transition-colors hover:bg-[#003a63] ${buttonRadius}`}
-          >
-            Request a Quote
-          </Link>
         </div>
       </div>
 
-      <div className="border-t border-gray-200 px-4 py-2.5">
+      <div className="border-t border-gray-200 px-3 py-2 sm:px-4 sm:py-2.5">
         <label className="flex cursor-pointer items-center gap-2 text-[13px] text-gray-600">
           <Checkbox
             checked={compared}
@@ -370,7 +365,7 @@ export default function CategoryProductListing({
 
   return (
     <>
-    <div className={`flex flex-col gap-8 lg:flex-row ${compareSet.size ? "pb-28" : ""}`}>
+    <div className={`flex min-w-0 flex-col gap-8 overflow-x-hidden lg:flex-row ${compareSet.size ? "pb-28" : ""}`}>
       <aside className="hidden w-56 shrink-0 lg:block">
         <ProductFilters
           selectedMaterials={selectedMaterials}
@@ -383,18 +378,18 @@ export default function CategoryProductListing({
       </aside>
 
       <div className="min-w-0 flex-1">
-        <div className="mb-4 flex flex-col gap-3 border-b border-gray-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className={`flex w-full max-w-md overflow-hidden border border-gray-300 ${inputRadius}`}>
+        <div className="mb-4 space-y-3 border-b border-gray-200 pb-4">
+          <div className={`flex min-w-0 overflow-hidden border border-gray-300 ${inputRadius}`}>
             <input
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Search within results"
-              className="h-10 flex-1 px-3 text-[14px] outline-none"
+              className="h-10 min-w-0 flex-1 px-3 text-[14px] outline-none"
             />
             <button
               type="button"
-              className="flex h-10 w-11 items-center justify-center bg-[#004b87] text-white"
+              className="flex h-10 w-11 shrink-0 items-center justify-center bg-[#004b87] text-white"
               aria-label="Search within results"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -404,17 +399,19 @@ export default function CategoryProductListing({
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className={`flex items-center gap-2 border border-gray-200 px-3 py-2 text-[13px] font-bold text-[#333] lg:hidden ${buttonRadius}`}
+              className={`shrink-0 border border-gray-200 px-3 py-2 text-[13px] font-bold text-[#333] lg:hidden ${buttonRadius}`}
             >
               Filters
             </button>
 
             <Select value={sortBy} onValueChange={setSortBy} modal={false}>
-              <SelectTrigger className={`h-10 min-w-[220px] border-gray-300 bg-white px-3 text-[14px] text-[#333] shadow-none focus-visible:border-[#16568D] focus-visible:ring-0 ${buttonRadius}`}>
+              <SelectTrigger
+                className={`h-10 min-w-0 flex-1 border-gray-300 bg-white px-2 text-[13px] text-[#333] shadow-none focus-visible:border-[#16568D] focus-visible:ring-0 sm:px-3 sm:text-[14px] lg:max-w-[260px] lg:flex-none ${buttonRadius}`}
+              >
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent
@@ -433,11 +430,11 @@ export default function CategoryProductListing({
               </SelectContent>
             </Select>
 
-            <div className={`flex overflow-hidden border border-gray-300 ${buttonRadius}`}>
+            <div className={`flex shrink-0 overflow-hidden border border-gray-300 ${buttonRadius}`}>
               <button
                 type="button"
                 onClick={() => setView("list")}
-                className={`px-4 py-2 text-[14px] font-semibold transition-colors ${
+                className={`px-3 py-2 text-[13px] font-semibold transition-colors sm:px-4 sm:text-[14px] ${
                   view === "list"
                     ? "bg-[#004b87] text-white"
                     : "bg-white text-[#333] hover:bg-gray-50"
@@ -448,7 +445,7 @@ export default function CategoryProductListing({
               <button
                 type="button"
                 onClick={() => setView("grid")}
-                className={`border-l border-gray-300 px-4 py-2 text-[14px] font-semibold transition-colors ${
+                className={`border-l border-gray-300 px-3 py-2 text-[13px] font-semibold transition-colors sm:px-4 sm:text-[14px] ${
                   view === "grid"
                     ? "bg-[#004b87] text-white"
                     : "bg-white text-[#333] hover:bg-gray-50"
@@ -460,7 +457,7 @@ export default function CategoryProductListing({
           </div>
         </div>
 
-        <p className="mb-4 text-[14px] text-gray-500">
+        <p className="mb-3 text-[13px] text-gray-500 lg:mb-4 lg:text-[14px]">
           {filteredProducts.length} product{filteredProducts.length === 1 ? "" : "s"} found
         </p>
 
@@ -470,20 +467,18 @@ export default function CategoryProductListing({
           </p>
         ) : null}
 
-        <div
-          className={`mb-6 overflow-hidden transition-all duration-300 lg:hidden ${
-            showMobileFilters ? "max-h-[420px] rounded border border-gray-200 bg-gray-50 p-4" : "max-h-0"
-          }`}
-        >
-          <ProductFilters
-            selectedMaterials={selectedMaterials}
-            selectedPriceRanges={selectedPriceRanges}
-            onMaterialToggle={toggleMaterial}
-            onPriceRangeToggle={togglePriceRange}
-            onClearFilters={clearFilters}
-            hasActiveFilters={hasActiveFilters}
-          />
-        </div>
+        {showMobileFilters && (
+          <div className={`mb-4 rounded-lg border border-gray-200 bg-gray-50 p-4 lg:hidden ${cardRadius}`}>
+            <ProductFilters
+              selectedMaterials={selectedMaterials}
+              selectedPriceRanges={selectedPriceRanges}
+              onMaterialToggle={toggleMaterial}
+              onPriceRangeToggle={togglePriceRange}
+              onClearFilters={clearFilters}
+              hasActiveFilters={hasActiveFilters}
+            />
+          </div>
+        )}
 
         {filteredProducts.length === 0 ? (
           <div className={`${cardRadius} border border-gray-200 bg-white px-6 py-16 text-center text-gray-500`}>
