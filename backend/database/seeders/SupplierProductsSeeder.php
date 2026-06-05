@@ -30,6 +30,9 @@ class SupplierProductsSeeder extends Seeder
 
         $brandIds['flexco'] = $this->ensureBrand('Flexco', $brandIds);
         $brandIds['continental'] = $brandIds['continental'] ?? $this->ensureBrand('Continental', $brandIds);
+        $brandIds['gates'] = $this->ensureBrand('Gates', $brandIds);
+        $brandIds['dixon'] = $this->ensureBrand('Dixon', $brandIds);
+        $brandIds['wellcall'] = $this->ensureBrand('Wellcall', $brandIds);
 
         $missingSlugs = [];
         $created = 0;
